@@ -11,6 +11,7 @@ KeyboardEvents = {
       }));
     };
     return window.onkeyup = function(e) {
+      console.log(e);
       return websocket.send(JSON.stringify({
         event: "keyup",
         keycode: e.keyCode
@@ -61,7 +62,35 @@ World = (function() {
   };
 
   World.prototype.update = function(update) {
-    return this.members.set(update.members);
+    this.members.set(update.members);
+    return this.members.forEach(function(player) {
+      var filename, frame, walkFrames;
+      walkFrames = [1, 3];
+      frame = parseInt(Date.now() / 200) % 2;
+      filename = (function() {
+        switch (player.get("direction")) {
+          case "up":
+            player.lastDirection = "north";
+            return "north" + walkFrames[frame];
+          case "down":
+            player.lastDirection = "south";
+            return "south" + walkFrames[frame];
+          case "left":
+            player.lastDirection = "west";
+            return "west" + walkFrames[frame];
+          case "right":
+            player.lastDirection = "east";
+            return "east" + walkFrames[frame];
+          case "none":
+            if (player.lastDirection) {
+              return "" + player.lastDirection + "2";
+            } else {
+              return "south2";
+            }
+        }
+      })();
+      return player.sprite.setTexture(PIXI.Texture.fromImage("sprites/" + filename + ".png"));
+    });
   };
 
   World.prototype.render = function(elapsed) {

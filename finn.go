@@ -107,17 +107,28 @@ func main() {
 						if event.Event == "keydown" {
 							switch event.KeyCode {
 							case 37:
-								player.Direction = "left"
+								player.MovingLeft = true
 							case 38:
-								player.Direction = "up"
+								player.MovingUp = true
 							case 39:
-								player.Direction = "right"
+								player.MovingRight = true
 							case 40:
-								player.Direction = "down"
+								player.MovingDown = true
 							}
-						} else if event.Event == "keyup" {
-							player.Direction = NoDirectionLabel
 						}
+						if event.Event == "keyup" {
+							switch event.KeyCode {
+							case 37:
+								player.MovingLeft = false
+							case 38:
+								player.MovingUp = false
+							case 39:
+								player.MovingRight = false
+							case 40:
+								player.MovingDown = false
+							}
+						}
+						log.Debugf("player %+v", player)
 					}
 				}
 			}

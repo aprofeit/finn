@@ -4,6 +4,7 @@ KeyboardEvents =
       websocket.send(JSON.stringify(event: "keydown", keycode: e.keyCode))
 
     window.onkeyup = (e) ->
+      console.log e
       websocket.send(JSON.stringify(event: "keyup", keycode: e.keyCode))
 
 class World
@@ -38,6 +39,29 @@ class World
 
   update: (update) ->
     @members.set(update.members)
+    @members.forEach (player) ->
+      walkFrames = [1, 3]
+      frame = (parseInt(Date.now() / 200) % 2)
+      filename = switch player.get("direction")
+        when "up"
+          player.lastDirection = "north"
+          "north#{walkFrames[frame]}"
+        when "down"
+          player.lastDirection = "south"
+          "south#{walkFrames[frame]}"
+        when "left"
+          player.lastDirection = "west"
+          "west#{walkFrames[frame]}"
+        when "right"
+          player.lastDirection = "east"
+          "east#{walkFrames[frame]}"
+        when "none"
+          if player.lastDirection
+            "#{player.lastDirection}2"
+          else
+            "south2"
+
+      player.sprite.setTexture(PIXI.Texture.fromImage("sprites/#{filename}.png"))
 
   render: (elapsed) =>
     requestAnimFrame(@render)
