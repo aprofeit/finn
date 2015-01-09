@@ -23,10 +23,31 @@ World = (function() {
 
   function World(options) {
     this.render = __bind(this.render, this);
+
+    var _this = this;
     this.stage = new PIXI.Stage(0xFFFFFF);
     this.renderer = PIXI.autoDetectRenderer(1000, 600);
-    this.members = {};
+    this.members = new Backbone.Collection();
     document.body.appendChild(this.renderer.view);
+    this.members.on("add", function(player) {
+      var sprite;
+      sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")));
+      sprite.anchor.x = player.get("anchor_x");
+      sprite.anchor.y = player.get("anchor_y");
+      sprite.position.x = player.get("position_x");
+      sprite.position.y = player.get("position_y");
+      _this.stage.addChild(sprite);
+      return player.sprite = sprite;
+    });
+    this.members.on("remove", function(player) {
+      return _this.stage.removeChild(player.sprite);
+    });
+    this.members.on("change", function(player) {
+      var sprite;
+      sprite = player.sprite;
+      sprite.position.x = player.get("position_x");
+      return sprite.position.y = player.get("position_y");
+    });
   }
 
   World.prototype.connect = function() {
@@ -40,38 +61,7 @@ World = (function() {
   };
 
   World.prototype.update = function(update) {
-    var id, ids, member, sprite, _i, _len, _ref, _ref1, _results;
-    ids = _.map(update.members, function(m) {
-      return m.id;
-    });
-    _ref = this.members;
-    for (id in _ref) {
-      member = _ref[id];
-      if (ids.indexOf(id) === -1) {
-        this.stage.removeChild(member.sprite);
-        delete this.members[id];
-      }
-    }
-    _ref1 = update.members;
-    _results = [];
-    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-      member = _ref1[_i];
-      if (this.members[member.id]) {
-        sprite = this.members[member.id].sprite;
-        sprite.position.x = member.position_x;
-        _results.push(sprite.position.y = member.position_y);
-      } else {
-        sprite = new PIXI.Sprite(PIXI.Texture.fromImage(member.texture));
-        sprite.anchor.x = member.anchor_x;
-        sprite.anchor.y = member.anchor_y;
-        sprite.position.x = member.position_x;
-        sprite.position.y = member.position_y;
-        this.stage.addChild(sprite);
-        member.sprite = sprite;
-        _results.push(this.members[member.id] = member);
-      }
-    }
-    return _results;
+    return this.members.set(update.members);
   };
 
   World.prototype.render = function(elapsed) {

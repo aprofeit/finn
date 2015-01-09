@@ -10,8 +10,25 @@ class World
   constructor: (options) ->
     @stage = new PIXI.Stage(0xFFFFFF)
     @renderer = PIXI.autoDetectRenderer(1000, 600)
-    @members = {}
+    @members = new Backbone.Collection()
     document.body.appendChild(@renderer.view)
+
+    @members.on "add", (player) =>
+      sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")))
+      sprite.anchor.x = player.get("anchor_x")
+      sprite.anchor.y = player.get("anchor_y")
+      sprite.position.x = player.get("position_x")
+      sprite.position.y = player.get("position_y")
+      @stage.addChild(sprite)
+      player.sprite = sprite
+
+    @members.on "remove", (player) =>
+      @stage.removeChild(player.sprite)
+
+    @members.on "change", (player) ->
+      sprite = player.sprite
+      sprite.position.x = player.get("position_x")
+      sprite.position.y = player.get("position_y")
 
   connect: ->
     @websocket = new WebSocket("ws://#{window.location.host}/websocket")
@@ -20,28 +37,7 @@ class World
       @update(world)
 
   update: (update) ->
-    ids = _.map update.members, (m) ->
-      m.id
-
-    for id, member of @members
-      if ids.indexOf(id) == -1
-        @stage.removeChild(member.sprite)
-        delete @members[id]
-
-    for member in update.members
-      if @members[member.id]
-        sprite = @members[member.id].sprite
-        sprite.position.x = member.position_x
-        sprite.position.y = member.position_y
-      else
-        sprite = new PIXI.Sprite(PIXI.Texture.fromImage(member.texture))
-        sprite.anchor.x = member.anchor_x
-        sprite.anchor.y = member.anchor_y
-        sprite.position.x = member.position_x
-        sprite.position.y = member.position_y
-        @stage.addChild(sprite)
-        member.sprite = sprite
-        @members[member.id] = member
+    @members.set(update.members)
 
   render: (elapsed) =>
     requestAnimFrame(@render)
