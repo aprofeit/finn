@@ -6,11 +6,6 @@ KeyboardEvents =
     window.onkeyup = (e) ->
       websocket.send(JSON.stringify(event: "keyup", keycode: e.keyCode))
 
-update =
-  members: [
-    { id: 'abc', texture: 'south2.png', anchor_x: 0.5, anchor_y: 0.5, position_x: 10, position_y: 10 }
-  ]
-
 class World
   constructor: (options) ->
     @stage = new PIXI.Stage(0xFFFFFF)

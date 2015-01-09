@@ -99,7 +99,7 @@ type Player struct {
 }
 
 const NoDirectionLabel string = "none"
-const WalkRate float64 = 3
+const WalkRate float64 = 5
 
 type World struct {
 	Players []*Player `json:"members"`
