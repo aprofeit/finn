@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -78,6 +79,19 @@ func init() {
 	log.SetLevel(log.DebugLevel)
 }
 
+func (p *Player) Update(elapsed time.Duration) {
+	switch p.Direction {
+	case "up":
+		p.PositionY += 0.1
+	case "down":
+		p.PositionY -= 0.1
+	case "left":
+		p.PositionX += 0.1
+	case "right":
+		p.PositionX -= 0.1
+	}
+}
+
 func main() {
 	clientEvents := make(chan *ClientEvent)
 	world := &World{}
@@ -89,6 +103,16 @@ func main() {
 		World:        world,
 	}
 	http.Handle("/websocket", websocketHandler)
+
+	go func() {
+		for now := range time.Tick(time.Second / 30) {
+			last := time.Now()
+			for _, player := range world.Players {
+				player.Update(time.Since(last))
+				last = now
+			}
+		}
+	}()
 
 	go func() {
 		for {
