@@ -17,29 +17,6 @@ type WebSocketHandler struct {
 	WorldUpdates chan *World
 }
 
-func (w *World) AddPlayer(id string) {
-	player := &Player{
-		ClientID:  id,
-		PositionX: 10,
-		PositionY: 10,
-		AnchorX:   0.5,
-		AnchorY:   0.5,
-		Texture:   "south2.png",
-		Direction: NoDirectionLabel,
-	}
-
-	w.Players = append(w.Players, player)
-}
-
-func (w *World) RemovePlayer(id string) {
-	for i, player := range w.Players {
-		if player.ClientID == id {
-			w.Players = append(w.Players[:i], w.Players[i+1:]...)
-			return
-		}
-	}
-}
-
 func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	conn, err := h.Upgrade(w, r, nil)
 	if err != nil {
@@ -88,38 +65,11 @@ type ClientEvent struct {
 	KeyCode  int    `json:"keycode"`
 }
 
-type Player struct {
-	ClientID  string  `json:"id"`
-	PositionX float64 `json:"position_x"`
-	PositionY float64 `json:"position_y"`
-	AnchorX   float64 `json:"anchor_x"`
-	AnchorY   float64 `json:"anchor_y"`
-	Texture   string  `json:"texture"`
-	Direction string  `json:"direction"`
-}
-
 const NoDirectionLabel string = "none"
 const WalkRate float64 = 5
 
-type World struct {
-	Players []*Player `json:"members"`
-}
-
 func init() {
 	log.SetLevel(log.DebugLevel)
-}
-
-func (p *Player) Update(elapsed time.Duration) {
-	switch p.Direction {
-	case "up":
-		p.PositionY -= WalkRate
-	case "down":
-		p.PositionY += WalkRate
-	case "left":
-		p.PositionX -= WalkRate
-	case "right":
-		p.PositionX += WalkRate
-	}
 }
 
 func main() {
