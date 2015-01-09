@@ -20,6 +20,7 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error(err)
 	}
+	log.Infof("Client connected %v", conn.RemoteAddr().String())
 
 	player := &Player{
 		ClientID:  conn.RemoteAddr().String(),
@@ -36,17 +37,18 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
-			log.Infof("Client disconnected: ", err)
+			log.Infof("Client disconnected %v", conn.RemoteAddr().String())
 			return
 		}
 		event := &ClientEvent{ClientID: conn.RemoteAddr().String()}
 		err = json.Unmarshal(p, event)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("Unmarshaling client event json: %v", err)
 		}
 		h.ClientEvents <- event
+
 		if err = conn.WriteMessage(messageType, p); err != nil {
-			log.Error(err)
+			log.Error("Writing message to client: %v", err)
 			return
 		}
 	}
@@ -114,5 +116,6 @@ func main() {
 		}
 	}()
 
+	log.Info("Listening on 3000")
 	http.ListenAndServe(":3000", nil)
 }
