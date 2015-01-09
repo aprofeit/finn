@@ -17,15 +17,9 @@ type WebSocketHandler struct {
 	WorldUpdates chan *World
 }
 
-func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	conn, err := h.Upgrade(w, r, nil)
-	if err != nil {
-		log.Error(err)
-	}
-	log.Infof("Client connected %v", conn.RemoteAddr().String())
-
+func (w *World) AddPlayer(id string) {
 	player := &Player{
-		ClientID:  conn.RemoteAddr().String(),
+		ClientID:  id,
 		PositionX: 10,
 		PositionY: 10,
 		AnchorX:   0.5,
@@ -34,7 +28,27 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Direction: NoDirectionLabel,
 	}
 
-	h.World.Players = append(h.World.Players, player)
+	w.Players = append(w.Players, player)
+}
+
+func (w *World) RemovePlayer(id string) {
+	for i, player := range w.Players {
+		if player.ClientID == id {
+			w.Players = append(w.Players[:i], w.Players[i+1:]...)
+			return
+		}
+	}
+}
+
+func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	conn, err := h.Upgrade(w, r, nil)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Infof("Client connected %v", conn.RemoteAddr().String())
+
+	playerID := conn.RemoteAddr().String()
+	h.World.AddPlayer(playerID)
 
 	go func() {
 		for {
@@ -56,6 +70,7 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_, p, err := conn.ReadMessage()
 		if err != nil {
 			log.Infof("Client disconnected %v", conn.RemoteAddr().String())
+			h.World.RemovePlayer(playerID)
 			return
 		}
 		event := &ClientEvent{ClientID: conn.RemoteAddr().String()}
