@@ -46,7 +46,9 @@ World = (function() {
     var _this = this;
     this.websocket = new WebSocket("ws://" + window.location.host + "/websocket");
     return this.websocket.onmessage = function(e) {
-      return console.log("[WebSocket] Incoming: ", JSON.parse(e.data));
+      var world;
+      world = JSON.parse(e.data);
+      return _this.update(world);
     };
   };
 

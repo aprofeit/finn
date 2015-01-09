@@ -21,7 +21,8 @@ class World
   connect: ->
     @websocket = new WebSocket("ws://#{window.location.host}/websocket")
     @websocket.onmessage = (e) =>
-      console.log "[WebSocket] Incoming: ", JSON.parse(e.data)
+      world = JSON.parse(e.data)
+      @update(world)
 
   update: (update) ->
     ids = _.map update.members, (m) ->

@@ -14,6 +14,7 @@ type WebSocketHandler struct {
 	websocket.Upgrader
 	ClientEvents chan *ClientEvent
 	World        *World
+	WorldUpdates chan *World
 }
 
 func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -30,13 +31,29 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		AnchorX:   0.5,
 		AnchorY:   0.5,
 		Texture:   "south2.png",
-		Direction: "",
+		Direction: NoDirectionLabel,
 	}
 
 	h.World.Players = append(h.World.Players, player)
 
+	go func() {
+		for {
+			world := <-h.WorldUpdates
+
+			blob, err := json.Marshal(world)
+			if err != nil {
+				log.Errorf("Marshaling world update %v", world)
+			}
+
+			if err = conn.WriteMessage(websocket.TextMessage, blob); err != nil {
+				log.Errorf("Writing update to client: %v", err)
+				return
+			}
+		}
+	}()
+
 	for {
-		messageType, p, err := conn.ReadMessage()
+		_, p, err := conn.ReadMessage()
 		if err != nil {
 			log.Infof("Client disconnected %v", conn.RemoteAddr().String())
 			return
@@ -47,11 +64,6 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Errorf("Unmarshaling client event json: %v", err)
 		}
 		h.ClientEvents <- event
-
-		if err = conn.WriteMessage(messageType, p); err != nil {
-			log.Error("Writing message to client: %v", err)
-			return
-		}
 	}
 }
 
@@ -71,8 +83,11 @@ type Player struct {
 	Direction string  `json:"direction"`
 }
 
+const NoDirectionLabel string = "none"
+const WalkRate float64 = 3
+
 type World struct {
-	Players []*Player
+	Players []*Player `json:"members"`
 }
 
 func init() {
@@ -82,25 +97,27 @@ func init() {
 func (p *Player) Update(elapsed time.Duration) {
 	switch p.Direction {
 	case "up":
-		p.PositionY += 0.1
+		p.PositionY -= WalkRate
 	case "down":
-		p.PositionY -= 0.1
+		p.PositionY += WalkRate
 	case "left":
-		p.PositionX += 0.1
+		p.PositionX -= WalkRate
 	case "right":
-		p.PositionX -= 0.1
+		p.PositionX += WalkRate
 	}
 }
 
 func main() {
 	clientEvents := make(chan *ClientEvent)
 	world := &World{}
+	updates := make(chan *World)
 
 	http.Handle("/", http.FileServer(http.Dir("public/")))
 	websocketHandler := &WebSocketHandler{
 		Upgrader:     websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024},
 		ClientEvents: clientEvents,
 		World:        world,
+		WorldUpdates: updates,
 	}
 	http.Handle("/websocket", websocketHandler)
 
@@ -110,6 +127,8 @@ func main() {
 			for _, player := range world.Players {
 				player.Update(time.Since(last))
 				last = now
+
+				updates <- world
 			}
 		}
 	}()
@@ -132,7 +151,7 @@ func main() {
 								player.Direction = "down"
 							}
 						} else if event.Event == "keyup" {
-							player.Direction = "none"
+							player.Direction = NoDirectionLabel
 						}
 					}
 				}
