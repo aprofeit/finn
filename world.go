@@ -12,7 +12,7 @@ func (w *World) AddPlayer(id string) {
 		AnchorX:   0.5,
 		AnchorY:   0.5,
 		Texture:   "sprites/south2.png",
-		Direction: NoDirectionLabel,
+		Direction: "none",
 	}
 
 	w.Players = append(w.Players, player)

@@ -65,7 +65,6 @@ type ClientEvent struct {
 	KeyCode  int    `json:"keycode"`
 }
 
-const NoDirectionLabel string = "none"
 const WalkRate float64 = 5
 
 func init() {
@@ -128,7 +127,6 @@ func main() {
 								player.MovingDown = false
 							}
 						}
-						log.Debugf("player %+v", player)
 					}
 				}
 			}
