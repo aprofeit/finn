@@ -19,27 +19,21 @@ type Player struct {
 func (p *Player) Update(elapsed time.Duration) {
 	if p.MovingUp {
 		p.Direction = "up"
+		p.PositionY -= WalkRate
 	}
 	if p.MovingDown {
 		p.Direction = "down"
+		p.PositionY += WalkRate
 	}
 	if p.MovingLeft {
 		p.Direction = "left"
+		p.PositionX -= WalkRate
 	}
 	if p.MovingRight {
 		p.Direction = "right"
+		p.PositionX += WalkRate
 	}
 	if !p.MovingRight && !p.MovingLeft && !p.MovingUp && !p.MovingDown {
 		p.Direction = "none"
-	}
-	switch p.Direction {
-	case "up":
-		p.PositionY -= WalkRate
-	case "down":
-		p.PositionY += WalkRate
-	case "left":
-		p.PositionX -= WalkRate
-	case "right":
-		p.PositionX += WalkRate
 	}
 }
