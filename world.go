@@ -6,16 +6,18 @@ import (
 )
 
 type Tile struct {
-	Kind string
+	Kind   string
+	region int
 }
 
 type World struct {
-	Players  []*Player `json:"members"`
-	TileGrid [][]*Tile
-	Rooms    []*Rect
+	Players       []*Player `json:"members"`
+	TileGrid      [][]*Tile
+	Rooms         []*Rect
+	currentRegion int
 }
 
-const WORLD_WIDTH int = 201
+const WORLD_WIDTH int = 101
 const WORLD_HEIGHT int = 61
 
 func NewWorld() *World {
@@ -60,9 +62,130 @@ func (w *World) RemovePlayer(id string) {
 func (w *World) Generate() {
 	w.fillAll("wall")
 	w.addRooms()
+
+	for x := 1; x < WORLD_WIDTH; x += 2 {
+		for y := 1; y < WORLD_HEIGHT; y += 2 {
+			tile := w.TileGrid[x][y]
+			if tile.Kind != "wall" {
+				continue
+			}
+			w.GrowMaze(x, y)
+		}
+	}
 }
 
-const NUM_ROOM_ATTEMPTS int = 1000
+const WINDING_PERCENT int = 25
+
+func (w *World) GrowMaze(x, y int) {
+	pos := &Coordinate{x, y}
+	cells := []*Coordinate{}
+	w.startRegion()
+	w.Carve(x, y)
+	cells = append(cells, pos)
+	var lastDir string
+
+	for len(cells) > 0 {
+		cell := cells[len(cells)-1]
+
+		unmadeCells := []string{}
+		for _, direction := range []string{
+			"north",
+			"south",
+			"east",
+			"west",
+		} {
+			if w.canCarve(cell.X, cell.Y, direction) {
+				unmadeCells = append(unmadeCells, direction)
+			}
+		}
+
+		if len(unmadeCells) > 0 {
+			dir := ""
+			unmadeCellsContainsLast := false
+			for _, direction := range unmadeCells {
+				if direction == lastDir {
+					unmadeCellsContainsLast = true
+				}
+			}
+			if unmadeCellsContainsLast && rand.Intn(100) > WINDING_PERCENT {
+				dir = lastDir
+			} else {
+				dir = unmadeCells[rand.Intn(len(unmadeCells))]
+			}
+
+			switch dir {
+			case "north":
+				w.Carve(cell.X, cell.Y+1)
+				w.Carve(cell.X, cell.Y+2)
+				cells = append(cells, &Coordinate{cell.X, cell.Y + 2})
+			case "south":
+				w.Carve(cell.X, cell.Y-1)
+				w.Carve(cell.X, cell.Y-2)
+				cells = append(cells, &Coordinate{cell.X, cell.Y - 2})
+			case "east":
+				w.Carve(cell.X+1, cell.Y)
+				w.Carve(cell.X+2, cell.Y)
+				cells = append(cells, &Coordinate{cell.X + 2, cell.Y})
+			case "west":
+				w.Carve(cell.X-1, cell.Y)
+				w.Carve(cell.X-2, cell.Y)
+				cells = append(cells, &Coordinate{cell.X - 2, cell.Y})
+			}
+
+			lastDir = dir
+		} else {
+			cells = cells[:len(cells)-1]
+			lastDir = ""
+		}
+	}
+}
+
+func (w *World) canCarve(x int, y int, direction string) bool {
+	switch direction {
+	case "north":
+		if y+3 > WORLD_HEIGHT {
+			return false
+		}
+
+		if w.TileGrid[x][y+2].Kind == "wall" {
+			return true
+		}
+	case "south":
+		if y-3 < 0 {
+			return false
+		}
+
+		if w.TileGrid[x][y-2].Kind == "wall" {
+			return true
+		}
+	case "east":
+		if x+3 > WORLD_WIDTH {
+			return false
+		}
+
+		if w.TileGrid[x+2][y].Kind == "wall" {
+			return true
+		}
+	case "west":
+		if x-3 < 0 {
+			return false
+		}
+
+		if w.TileGrid[x-2][y].Kind == "wall" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (w *World) Carve(x, y int) {
+	tile := w.TileGrid[x][y]
+	tile.Kind = "floor"
+	tile.region = w.currentRegion
+}
+
+const NUM_ROOM_ATTEMPTS int = 100
 const ROOM_EXTRA_SIZE int = 3
 
 func (w *World) addRooms() {
@@ -95,13 +218,20 @@ func (w *World) addRooms() {
 		}
 
 		w.Rooms = append(w.Rooms, room)
+		w.startRegion()
 		w.CarveRect(room, "floor")
 	}
 }
 
+func (w *World) startRegion() {
+	w.currentRegion += 1
+}
+
 func (w *World) CarveRect(r *Rect, kind string) {
 	for _, coord := range r.Coords() {
-		w.TileGrid[coord.X][coord.Y].Kind = kind
+		tile := w.TileGrid[coord.X][coord.Y]
+		tile.Kind = kind
+		tile.region = w.currentRegion
 	}
 }
 
