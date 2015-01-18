@@ -73,7 +73,8 @@ func init() {
 
 func main() {
 	clientEvents := make(chan *ClientEvent)
-	world := &World{}
+	world := NewWorld()
+	world.Generate()
 	updates := make(chan *World)
 
 	http.Handle("/", http.FileServer(http.Dir("public/")))
@@ -84,6 +85,19 @@ func main() {
 		WorldUpdates: updates,
 	}
 	http.Handle("/websocket", websocketHandler)
+	http.HandleFunc("/world", func(w http.ResponseWriter, r *http.Request) {
+		for y := 0; y < WORLD_HEIGHT; y++ {
+			for x := 0; x < WORLD_WIDTH; x++ {
+				switch world.TileGrid[x][y].Kind {
+				case "wall":
+					w.Write([]byte("X"))
+				case "floor":
+					w.Write([]byte(" "))
+				}
+			}
+			w.Write([]byte("\n"))
+		}
+	})
 
 	go func() {
 		for now := range time.Tick(time.Second / 30) {
