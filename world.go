@@ -7,6 +7,8 @@ import (
 
 type Tile struct {
 	Kind   string
+	X      int
+	Y      int
 	region int
 }
 
@@ -26,7 +28,7 @@ func NewWorld() *World {
 		cols[x] = make([]*Tile, WORLD_HEIGHT)
 
 		for y := range cols[x] {
-			cols[x][y] = &Tile{}
+			cols[x][y] = &Tile{X: x, Y: y}
 		}
 	}
 
@@ -72,6 +74,122 @@ func (w *World) Generate() {
 			w.GrowMaze(x, y)
 		}
 	}
+
+	w.connectRegions()
+	w.removeDeadEnds()
+}
+
+func (w *World) connectRegions() {
+	connectorRegions := map[*Tile][]int{}
+	for x := range w.TileGrid {
+		for y, tile := range w.TileGrid[x] {
+			if x == 0 || x == len(w.TileGrid)-1 || y == 0 || y == len(w.TileGrid[x])-1 {
+				continue
+			}
+
+			if tile.Kind != "wall" {
+				continue
+			}
+
+			regions := []int{}
+			for _, adjs := range []struct{ x, y int }{
+				{x, y + 1},
+				{x, y - 1},
+				{x + 1, y},
+				{x - 1, y},
+			} {
+				adjTile := w.TileGrid[adjs.x][adjs.y]
+				if adjTile.Kind != "floor" {
+					continue
+				}
+				regions = append(regions, adjTile.region)
+			}
+
+			if len(regions) < 2 {
+				continue
+			}
+
+			connectorRegions[tile] = regions
+		}
+	}
+
+	connectors := []*Tile{}
+	for key, _ := range connectorRegions {
+		connectors = append(connectors, key)
+	}
+
+	merged := map[int]int{}
+	openRegions := []int{}
+	for i := 0; i <= w.currentRegion; i++ {
+		merged[i] = i
+		openRegions = append(openRegions, i)
+	}
+
+	for len(openRegions) > 1 {
+		connector := connectors[rand.Intn(len(connectors))]
+		w.addJunction(connector)
+
+		regions := []int{}
+		for _, region := range connectorRegions[connector] {
+			regions = append(regions, merged[region])
+		}
+		dest := regions[0]
+		sources := regions[1:]
+
+		for i := 0; i < w.currentRegion; i++ {
+			sourcesContainsMerged := false
+			for _, source := range sources {
+				if source == merged[i] {
+					sourcesContainsMerged = true
+				}
+			}
+
+			if sourcesContainsMerged {
+				merged[i] = dest
+			}
+		}
+
+		for i, region := range openRegions {
+			for _, source := range sources {
+				if region == source {
+					openRegions = append(openRegions[:i], openRegions[i+1:]...)
+				}
+			}
+		}
+
+		for i, c := range connectors {
+			if c.X == connector.X && c.Y == connector.Y+1 {
+				connectors = append(connectors[:i], connectors[i+1:]...)
+				continue
+			} else if c.X == connector.X && c.Y == connector.Y-1 {
+				connectors = append(connectors[:i], connectors[i+1:]...)
+				continue
+			} else if c.X+1 == connector.X && c.Y == connector.Y {
+				connectors = append(connectors[:i], connectors[i+1:]...)
+				continue
+			} else if c.X-1 == connector.X && c.Y == connector.Y {
+				connectors = append(connectors[:i], connectors[i+1:]...)
+				continue
+			}
+
+			regions = []int{}
+			for _, region := range connectorRegions[c] {
+				regions = append(regions, merged[region])
+			}
+			if len(regions) > 1 {
+				continue
+			}
+
+			connectors = append(connectors[:i], connectors[i+1:]...)
+		}
+	}
+}
+
+func (w *World) addJunction(tile *Tile) {
+	tile.Kind = "floor"
+}
+
+func (w *World) removeDeadEnds() {
 }
 
 const WINDING_PERCENT int = 25
