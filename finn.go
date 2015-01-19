@@ -31,7 +31,7 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		for {
 			world := <-h.WorldUpdates
 
-			blob, err := json.Marshal(world)
+			blob, err := world.MarshalMembers()
 			if err != nil {
 				log.Errorf("Marshaling world update %v", world)
 			}
@@ -85,6 +85,13 @@ func main() {
 		WorldUpdates: updates,
 	}
 	http.Handle("/websocket", websocketHandler)
+	http.HandleFunc("/tiles", func(w http.ResponseWriter, r *http.Request) {
+		blob, err := world.MarshalTiles()
+		if err != nil {
+			log.Error("marshaling tiles: %v", err)
+		}
+		w.Write(blob)
+	})
 	http.HandleFunc("/world", func(w http.ResponseWriter, r *http.Request) {
 		for y := 0; y < WORLD_HEIGHT; y++ {
 			for x := 0; x < WORLD_WIDTH; x++ {

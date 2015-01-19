@@ -7,19 +7,33 @@ KeyboardEvents =
       console.log e
       websocket.send(JSON.stringify(event: "keyup", keycode: e.keyCode))
 
+Tiles = Backbone.Collection.extend
+  url: ->
+    "/tiles"
+
 class World
   constructor: (options) ->
     @stage = new PIXI.Stage(0xFFFFFF)
     @renderer = PIXI.autoDetectRenderer(1000, 600)
     @members = new Backbone.Collection()
+    @tiles = new Tiles()
     document.body.appendChild(@renderer.view)
+
+    @tiles.on "add", (tile) =>
+      if tile.get("kind") == "wall"
+        sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/wall.png"))
+        sprite.position.x = tile.get("x") * 100
+        sprite.position.y = tile.get("y") * 100
+        sprite.width = 100
+        sprite.height = 100
+        @stage.addChild(sprite)
 
     @members.on "add", (player) =>
       sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")))
-      sprite.anchor.x = player.get("anchor_x")
-      sprite.anchor.y = player.get("anchor_y")
       sprite.position.x = player.get("position_x")
       sprite.position.y = player.get("position_y")
+      sprite.height = 80
+      sprite.width = 50
       @stage.addChild(sprite)
       player.sprite = sprite
 
@@ -30,6 +44,8 @@ class World
       sprite = player.sprite
       sprite.position.x = player.get("position_x")
       sprite.position.y = player.get("position_y")
+
+    @tiles.fetch()
 
   connect: ->
     @websocket = new WebSocket("ws://#{window.location.host}/websocket")

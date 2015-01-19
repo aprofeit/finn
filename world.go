@@ -1,22 +1,45 @@
 package main
 
 import (
+	"encoding/json"
 	"math"
 	"math/rand"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type Tile struct {
-	Kind   string
-	X      int
-	Y      int
-	region int
+	Kind   string `json:"kind"`
+	X      int    `json:"x"`
+	Y      int    `json:"y"`
+	region int    `json:"-"`
 }
 
 type World struct {
-	Players       []*Player `json:"members"`
+	Players       []*Player
 	TileGrid      [][]*Tile
 	Rooms         []*Rect
 	currentRegion int
+}
+
+func (w *World) Tiles() []*Tile {
+	tiles := []*Tile{}
+	for x := range w.TileGrid {
+		for _, tile := range w.TileGrid[x] {
+			tiles = append(tiles, tile)
+		}
+	}
+	return tiles
+}
+
+func (w *World) MarshalMembers() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"members": w.Players,
+	})
+}
+
+func (w *World) MarshalTiles() ([]byte, error) {
+	return json.Marshal(w.Tiles())
 }
 
 const WORLD_WIDTH int = 101
@@ -102,7 +125,15 @@ func (w *World) connectRegions() {
 				if adjTile.Kind != "floor" {
 					continue
 				}
-				regions = append(regions, adjTile.region)
+				regionAlreadyAdded := false
+				for _, r := range regions {
+					if adjTile.region == r {
+						regionAlreadyAdded = true
+					}
+				}
+				if !regionAlreadyAdded {
+					regions = append(regions, adjTile.region)
+				}
 			}
 
 			if len(regions) < 2 {
@@ -110,6 +141,7 @@ func (w *World) connectRegions() {
 			}
 
 			connectorRegions[tile] = regions
+			log.Debugf("connector tile %+v has regions %v", tile, regions)
 		}
 	}
 
@@ -131,7 +163,15 @@ func (w *World) connectRegions() {
 
 		regions := []int{}
 		for _, region := range connectorRegions[connector] {
-			regions = append(regions, merged[region])
+			alreadyMember := false
+			for _, r := range regions {
+				if r == merged[region] {
+					alreadyMember = true
+				}
+			}
+			if !alreadyMember {
+				regions = append(regions, merged[region])
+			}
 		}
 		dest := regions[0]
 		sources := regions[1:]
