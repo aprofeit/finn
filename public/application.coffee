@@ -4,7 +4,6 @@ KeyboardEvents =
       websocket.send(JSON.stringify(event: "keydown", keycode: e.keyCode))
 
     window.onkeyup = (e) ->
-      console.log e
       websocket.send(JSON.stringify(event: "keyup", keycode: e.keyCode))
 
 Tiles = Backbone.Collection.extend
@@ -13,26 +12,43 @@ Tiles = Backbone.Collection.extend
 
 class World
   constructor: (options) ->
-    @stage = new PIXI.Stage(0xFFFFFF)
+    @stage = new PIXI.Stage(0x303030)
     @renderer = PIXI.autoDetectRenderer(1000, 600)
     @members = new Backbone.Collection()
+    @currentPlayer = new Backbone.Model()
     @tiles = new Tiles()
     document.body.appendChild(@renderer.view)
+
+    @currentPlayer.on "change", (player) =>
+      @xOff = ((1000/100)/2.0) - player.get("position_x")
+      @yOff = ((600/100)/2.0) - player.get("position_y")
+
+      @tiles.forEach (tile) =>
+        tile.sprite.position.x = (tile.get("x") + @xOff) * 100
+        tile.sprite.position.y = (tile.get("y") + @yOff) * 100
 
     @tiles.on "add", (tile) =>
       if tile.get("kind") == "wall"
         sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/wall.png"))
-        sprite.position.x = tile.get("x") * 100
-        sprite.position.y = tile.get("y") * 100
+        sprite.position.x = (tile.get("x") + @xOff) * 100
+        sprite.position.y = (tile.get("y") + @yOff) * 100
         sprite.width = 100
         sprite.height = 100
         @stage.addChild(sprite)
+        tile.sprite = sprite
+      else if tile.get("kind") == "floor"
+        sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/grass.png"))
+        sprite.position.x = (tile.get("x") + @xOff) * 100
+        sprite.position.y = (tile.get("y") + @yOff) * 100
+        sprite.width = 100
+        sprite.height = 100
+        @stage.addChild(sprite)
+        tile.sprite = sprite
 
     @members.on "add", (player) =>
       sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")))
-      sprite.position.x = player.get("position_x") * 100
-      sprite.position.y = player.get("position_y") * 100
-      console.log player
+      sprite.position.x = (player.get("position_x") + @xOff) * 100
+      sprite.position.y = (player.get("position_y") + @yOff)* 100
       sprite.height = player.get("height") * 100
       sprite.width = player.get("width") * 100
       @stage.addChild(sprite)
@@ -43,10 +59,8 @@ class World
 
     @members.on "change", (player) ->
       sprite = player.sprite
-      sprite.position.x = player.get("position_x") * 100
-      sprite.position.y = player.get("position_y") * 100
-
-    @tiles.fetch()
+      sprite.position.x = 500
+      sprite.position.y = 300
 
   connect: ->
     @websocket = new WebSocket("ws://#{window.location.host}/websocket")
@@ -54,7 +68,11 @@ class World
       world = JSON.parse(e.data)
       @update(world)
 
+    @websocket.onopen = =>
+      @tiles.fetch()
+
   update: (update) ->
+    @currentPlayer.set(update.current)
     @members.set(update.members)
     @members.forEach (player) ->
       walkFrames = [1, 3]

@@ -11,7 +11,6 @@ KeyboardEvents = {
       }));
     };
     return window.onkeyup = function(e) {
-      console.log(e);
       return websocket.send(JSON.stringify({
         event: "keyup",
         keycode: e.keyCode
@@ -32,28 +31,45 @@ World = (function() {
     this.render = __bind(this.render, this);
 
     var _this = this;
-    this.stage = new PIXI.Stage(0xFFFFFF);
+    this.stage = new PIXI.Stage(0x303030);
     this.renderer = PIXI.autoDetectRenderer(1000, 600);
     this.members = new Backbone.Collection();
+    this.currentPlayer = new Backbone.Model();
     this.tiles = new Tiles();
     document.body.appendChild(this.renderer.view);
+    this.currentPlayer.on("change", function(player) {
+      _this.xOff = ((1000 / 100) / 2.0) - player.get("position_x");
+      _this.yOff = ((600 / 100) / 2.0) - player.get("position_y");
+      return _this.tiles.forEach(function(tile) {
+        tile.sprite.position.x = (tile.get("x") + _this.xOff) * 100;
+        return tile.sprite.position.y = (tile.get("y") + _this.yOff) * 100;
+      });
+    });
     this.tiles.on("add", function(tile) {
       var sprite;
       if (tile.get("kind") === "wall") {
         sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/wall.png"));
-        sprite.position.x = tile.get("x") * 100;
-        sprite.position.y = tile.get("y") * 100;
+        sprite.position.x = (tile.get("x") + _this.xOff) * 100;
+        sprite.position.y = (tile.get("y") + _this.yOff) * 100;
         sprite.width = 100;
         sprite.height = 100;
-        return _this.stage.addChild(sprite);
+        _this.stage.addChild(sprite);
+        return tile.sprite = sprite;
+      } else if (tile.get("kind") === "floor") {
+        sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/grass.png"));
+        sprite.position.x = (tile.get("x") + _this.xOff) * 100;
+        sprite.position.y = (tile.get("y") + _this.yOff) * 100;
+        sprite.width = 100;
+        sprite.height = 100;
+        _this.stage.addChild(sprite);
+        return tile.sprite = sprite;
       }
     });
     this.members.on("add", function(player) {
       var sprite;
       sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")));
-      sprite.position.x = player.get("position_x") * 100;
-      sprite.position.y = player.get("position_y") * 100;
-      console.log(player);
+      sprite.position.x = (player.get("position_x") + _this.xOff) * 100;
+      sprite.position.y = (player.get("position_y") + _this.yOff) * 100;
       sprite.height = player.get("height") * 100;
       sprite.width = player.get("width") * 100;
       _this.stage.addChild(sprite);
@@ -65,23 +81,26 @@ World = (function() {
     this.members.on("change", function(player) {
       var sprite;
       sprite = player.sprite;
-      sprite.position.x = player.get("position_x") * 100;
-      return sprite.position.y = player.get("position_y") * 100;
+      sprite.position.x = 500;
+      return sprite.position.y = 300;
     });
-    this.tiles.fetch();
   }
 
   World.prototype.connect = function() {
     var _this = this;
     this.websocket = new WebSocket("ws://" + window.location.host + "/websocket");
-    return this.websocket.onmessage = function(e) {
+    this.websocket.onmessage = function(e) {
       var world;
       world = JSON.parse(e.data);
       return _this.update(world);
     };
+    return this.websocket.onopen = function() {
+      return _this.tiles.fetch();
+    };
   };
 
   World.prototype.update = function(update) {
+    this.currentPlayer.set(update.current);
     this.members.set(update.members);
     return this.members.forEach(function(player) {
       var filename, frame, walkFrames;

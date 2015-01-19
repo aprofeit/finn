@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"math"
 	"math/rand"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 type Tile struct {
@@ -32,9 +30,10 @@ func (w *World) Tiles() []*Tile {
 	return tiles
 }
 
-func (w *World) MarshalMembers() ([]byte, error) {
+func (w *World) MarshalMembers(current *Player) ([]byte, error) {
 	return json.Marshal(map[string]interface{}{
 		"members": w.Players,
+		"current": current,
 	})
 }
 
@@ -143,7 +142,6 @@ func (w *World) connectRegions() {
 			}
 
 			connectorRegions[tile] = regions
-			log.Debugf("connector tile %+v has regions %v", tile, regions)
 		}
 	}
 
@@ -345,7 +343,7 @@ func (w *World) Carve(x, y int) {
 	tile.region = w.currentRegion
 }
 
-const NUM_ROOM_ATTEMPTS int = 100
+const NUM_ROOM_ATTEMPTS int = 1000
 const ROOM_EXTRA_SIZE int = 3
 
 func (w *World) addRooms() {
