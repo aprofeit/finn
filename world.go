@@ -64,12 +64,14 @@ func NewWorld() *World {
 func (w *World) AddPlayer(id string) {
 	player := &Player{
 		ClientID:  id,
-		PositionX: 10,
-		PositionY: 10,
+		PositionX: 1,
+		PositionY: 1,
 		AnchorX:   0.5,
-		AnchorY:   0.5,
+		AnchorY:   0.25,
 		Texture:   "sprites/south2.png",
 		Direction: "none",
+		Width:     0.4,
+		Height:    0.3,
 	}
 
 	w.Players = append(w.Players, player)

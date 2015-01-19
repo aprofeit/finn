@@ -51,10 +51,11 @@ World = (function() {
     this.members.on("add", function(player) {
       var sprite;
       sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")));
-      sprite.position.x = player.get("position_x");
-      sprite.position.y = player.get("position_y");
-      sprite.height = 80;
-      sprite.width = 50;
+      sprite.position.x = player.get("position_x") * 100;
+      sprite.position.y = player.get("position_y") * 100;
+      console.log(player);
+      sprite.height = player.get("height") * 100;
+      sprite.width = player.get("width") * 100;
       _this.stage.addChild(sprite);
       return player.sprite = sprite;
     });
@@ -64,8 +65,8 @@ World = (function() {
     this.members.on("change", function(player) {
       var sprite;
       sprite = player.sprite;
-      sprite.position.x = player.get("position_x");
-      return sprite.position.y = player.get("position_y");
+      sprite.position.x = player.get("position_x") * 100;
+      return sprite.position.y = player.get("position_y") * 100;
     });
     this.tiles.fetch();
   }

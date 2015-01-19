@@ -30,10 +30,11 @@ class World
 
     @members.on "add", (player) =>
       sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")))
-      sprite.position.x = player.get("position_x")
-      sprite.position.y = player.get("position_y")
-      sprite.height = 80
-      sprite.width = 50
+      sprite.position.x = player.get("position_x") * 100
+      sprite.position.y = player.get("position_y") * 100
+      console.log player
+      sprite.height = player.get("height") * 100
+      sprite.width = player.get("width") * 100
       @stage.addChild(sprite)
       player.sprite = sprite
 
@@ -42,8 +43,8 @@ class World
 
     @members.on "change", (player) ->
       sprite = player.sprite
-      sprite.position.x = player.get("position_x")
-      sprite.position.y = player.get("position_y")
+      sprite.position.x = player.get("position_x") * 100
+      sprite.position.y = player.get("position_y") * 100
 
     @tiles.fetch()
 

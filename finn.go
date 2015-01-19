@@ -65,8 +65,6 @@ type ClientEvent struct {
 	KeyCode  int    `json:"keycode"`
 }
 
-const WalkRate float64 = 5
-
 func init() {
 	log.SetLevel(log.DebugLevel)
 }
@@ -110,7 +108,7 @@ func main() {
 		for now := range time.Tick(time.Second / 30) {
 			last := time.Now()
 			for _, player := range world.Players {
-				player.Update(time.Since(last))
+				player.Update(time.Since(last), world)
 				last = now
 
 				updates <- world
