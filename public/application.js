@@ -27,6 +27,18 @@ Tiles = Backbone.Collection.extend({
 
 World = (function() {
 
+  World.prototype.sort = function() {
+    return this.stage.children.sort(function(a, b) {
+      if (a.z < b.z) {
+        return -1;
+      } else if (a.z > b.z) {
+        return 1;
+      } else {
+        return 0;
+      }
+    });
+  };
+
   function World(options) {
     this.render = __bind(this.render, this);
 
@@ -49,31 +61,36 @@ World = (function() {
       var sprite;
       if (tile.get("kind") === "wall") {
         sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/wall.png"));
+        sprite.z = 0;
         sprite.position.x = (tile.get("x") + _this.xOff) * 100;
         sprite.position.y = (tile.get("y") + _this.yOff) * 100;
         sprite.width = 100;
         sprite.height = 100;
         _this.stage.addChild(sprite);
-        return tile.sprite = sprite;
+        tile.sprite = sprite;
       } else if (tile.get("kind") === "floor") {
         sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/grass.png"));
+        sprite.z = 0;
         sprite.position.x = (tile.get("x") + _this.xOff) * 100;
         sprite.position.y = (tile.get("y") + _this.yOff) * 100;
         sprite.width = 100;
         sprite.height = 100;
         _this.stage.addChild(sprite);
-        return tile.sprite = sprite;
+        tile.sprite = sprite;
       }
+      return _this.sort();
     });
     this.members.on("add", function(player) {
       var sprite;
       sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")));
+      sprite.z = 1;
       sprite.position.x = (player.get("position_x") + _this.xOff) * 100;
       sprite.position.y = (player.get("position_y") + _this.yOff) * 100;
       sprite.height = player.get("height") * 100;
       sprite.width = player.get("width") * 100;
       _this.stage.addChild(sprite);
-      return player.sprite = sprite;
+      player.sprite = sprite;
+      return _this.sort();
     });
     this.members.on("remove", function(player) {
       return _this.stage.removeChild(player.sprite);

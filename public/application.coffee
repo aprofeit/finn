@@ -11,6 +11,15 @@ Tiles = Backbone.Collection.extend
     "/tiles"
 
 class World
+  sort: ->
+    @stage.children.sort (a, b) ->
+      if (a.z < b.z)
+        return -1
+      else if (a.z > b.z)
+        return 1
+      else
+        return 0
+
   constructor: (options) ->
     @stage = new PIXI.Stage(0x303030)
     @renderer = PIXI.autoDetectRenderer(1000, 600)
@@ -30,6 +39,7 @@ class World
     @tiles.on "add", (tile) =>
       if tile.get("kind") == "wall"
         sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/wall.png"))
+        sprite.z = 0
         sprite.position.x = (tile.get("x") + @xOff) * 100
         sprite.position.y = (tile.get("y") + @yOff) * 100
         sprite.width = 100
@@ -38,6 +48,7 @@ class World
         tile.sprite = sprite
       else if tile.get("kind") == "floor"
         sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/grass.png"))
+        sprite.z = 0
         sprite.position.x = (tile.get("x") + @xOff) * 100
         sprite.position.y = (tile.get("y") + @yOff) * 100
         sprite.width = 100
@@ -45,14 +56,18 @@ class World
         @stage.addChild(sprite)
         tile.sprite = sprite
 
+      @sort()
+
     @members.on "add", (player) =>
       sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")))
+      sprite.z = 1
       sprite.position.x = (player.get("position_x") + @xOff) * 100
       sprite.position.y = (player.get("position_y") + @yOff)* 100
       sprite.height = player.get("height") * 100
       sprite.width = player.get("width") * 100
       @stage.addChild(sprite)
       player.sprite = sprite
+      @sort()
 
     @members.on "remove", (player) =>
       @stage.removeChild(player.sprite)
