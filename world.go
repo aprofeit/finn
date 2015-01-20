@@ -61,8 +61,14 @@ func (w *World) Tiles() []*Tile {
 }
 
 func (w *World) MarshalMembers(current *Player) ([]byte, error) {
+	otherPlayers := []*Player{}
+	for _, player := range w.Players {
+		if player.ClientID != current.ClientID {
+			otherPlayers = append(otherPlayers, player)
+		}
+	}
 	return json.Marshal(map[string]interface{}{
-		"members": w.Players,
+		"members": otherPlayers,
 		"current": current,
 	})
 }

@@ -10,6 +10,34 @@ Tiles = Backbone.Collection.extend
   url: ->
     "/tiles"
 
+Player = Backbone.Model.extend
+  setAnimationFrame: ->
+    walkFrames = [1, 3]
+    frame = (parseInt(Date.now() / 200) % 2)
+    filename = switch @get("direction")
+      when "up"
+        @lastDirection = "north"
+        "north#{walkFrames[frame]}"
+      when "down"
+        @lastDirection = "south"
+        "south#{walkFrames[frame]}"
+      when "left"
+        @lastDirection = "west"
+        "west#{walkFrames[frame]}"
+      when "right"
+        @lastDirection = "east"
+        "east#{walkFrames[frame]}"
+      when "none"
+        if @lastDirection
+          "#{@lastDirection}2"
+        else
+          "south2"
+
+    @sprite.setTexture(PIXI.Texture.fromImage("sprites/#{filename}.png"))
+
+Players = Backbone.Collection.extend
+  model: Player
+
 class World
   sort: ->
     @stage.children.sort (a, b) ->
@@ -23,14 +51,30 @@ class World
   constructor: (options) ->
     @stage = new PIXI.Stage(0x303030)
     @renderer = PIXI.autoDetectRenderer(1000, 600)
-    @members = new Backbone.Collection()
-    @currentPlayer = new Backbone.Model()
+    @members = new Players()
+    @currentPlayer = new Player()
+    @addedPlayerToStage = false
     @tiles = new Tiles()
     document.body.appendChild(@renderer.view)
 
     @currentPlayer.on "change", (player) =>
+      if !@addedPlayerToStage
+        sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")))
+        sprite.z = 1
+        sprite.position.x = 500
+        sprite.position.y = 300
+        sprite.height = player.get("height") * 100
+        sprite.width = player.get("width") * 100
+        @stage.addChild(sprite)
+        player.sprite = sprite
+        @sort()
+        @addedPlayerToStage = true
       @xOff = ((1000/100)/2.0) - player.get("position_x")
       @yOff = ((600/100)/2.0) - player.get("position_y")
+
+      @members.forEach (player) =>
+        player.sprite.position.x = (player.get("position_x") + @xOff) * 100
+        player.sprite.position.y = (player.get("position_y") + @yOff) * 100
 
       @tiles.forEach (tile) =>
         tile.sprite.position.x = (tile.get("x") + @xOff) * 100
@@ -72,10 +116,10 @@ class World
     @members.on "remove", (player) =>
       @stage.removeChild(player.sprite)
 
-    @members.on "change", (player) ->
+    @members.on "change", (player) =>
       sprite = player.sprite
-      sprite.position.x = 500
-      sprite.position.y = 300
+      sprite.position.x = (player.get("position_x") + @xOff) * 100
+      sprite.position.y = (player.get("position_y") + @yOff)* 100
 
   connect: ->
     @websocket = new WebSocket("ws://#{window.location.host}/websocket")
@@ -86,32 +130,13 @@ class World
     @websocket.onopen = =>
       @tiles.fetch()
 
+
   update: (update) ->
     @currentPlayer.set(update.current)
     @members.set(update.members)
     @members.forEach (player) ->
-      walkFrames = [1, 3]
-      frame = (parseInt(Date.now() / 200) % 2)
-      filename = switch player.get("direction")
-        when "up"
-          player.lastDirection = "north"
-          "north#{walkFrames[frame]}"
-        when "down"
-          player.lastDirection = "south"
-          "south#{walkFrames[frame]}"
-        when "left"
-          player.lastDirection = "west"
-          "west#{walkFrames[frame]}"
-        when "right"
-          player.lastDirection = "east"
-          "east#{walkFrames[frame]}"
-        when "none"
-          if player.lastDirection
-            "#{player.lastDirection}2"
-          else
-            "south2"
-
-      player.sprite.setTexture(PIXI.Texture.fromImage("sprites/#{filename}.png"))
+      player.setAnimationFrame()
+    @currentPlayer.setAnimationFrame()
 
   render: (elapsed) =>
     requestAnimFrame(@render)
