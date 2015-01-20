@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"math"
 	"math/rand"
+	"time"
 )
 
 type Tile struct {
 	Kind   string `json:"kind"`
 	X      int    `json:"x"`
 	Y      int    `json:"y"`
+	Z      int    `json:"z"`
 	region int    `json:"-"`
 }
 
@@ -18,6 +20,34 @@ type World struct {
 	TileGrid      [][]*Tile
 	Rooms         []*Rect
 	currentRegion int
+	projectiles   []*Bullet
+}
+
+func (w *World) Update(updates chan *World) {
+	for now := range time.Tick(time.Second / 30) {
+		last := time.Now()
+		for _, player := range w.Players {
+			player.Update(time.Since(last), w)
+		}
+		for _, bullet := range w.projectiles {
+			bullet.Update(time.Since(last), w)
+		}
+		last = now
+		updates <- w
+	}
+}
+
+func (w *World) AddProjectile(b *Bullet) {
+	w.projectiles = append(w.projectiles, b)
+}
+
+func (w *World) RemoveProjectile(b *Bullet) {
+	for i, bullet := range w.projectiles {
+		if bullet == b {
+			w.projectiles = append(w.projectiles[:i], w.projectiles[i+1:]...)
+		}
+		break
+	}
 }
 
 func (w *World) Tiles() []*Tile {
@@ -50,7 +80,7 @@ func NewWorld() *World {
 		cols[x] = make([]*Tile, WORLD_HEIGHT)
 
 		for y := range cols[x] {
-			cols[x][y] = &Tile{X: x, Y: y}
+			cols[x][y] = &Tile{X: x, Y: y, Z: 0}
 		}
 	}
 
@@ -62,6 +92,7 @@ func NewWorld() *World {
 
 func (w *World) AddPlayer(id string) {
 	player := &Player{
+		Z:         1,
 		ClientID:  id,
 		PositionX: 1,
 		PositionY: 1,

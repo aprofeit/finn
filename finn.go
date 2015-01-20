@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -110,17 +109,7 @@ func main() {
 		}
 	})
 
-	go func() {
-		for now := range time.Tick(time.Second / 30) {
-			last := time.Now()
-			for _, player := range world.Players {
-				player.Update(time.Since(last), world)
-				last = now
-
-				updates <- world
-			}
-		}
-	}()
+	go world.Update(updates)
 
 	go func() {
 		for {
@@ -138,6 +127,10 @@ func main() {
 								player.MovingRight = true
 							case 40:
 								player.MovingDown = true
+							case 32:
+								player.StartShot(world)
+							default:
+								log.Debugf("Unknown key pressed: %v", event.KeyCode)
 							}
 						}
 						if event.Event == "keyup" {
@@ -150,6 +143,8 @@ func main() {
 								player.MovingRight = false
 							case 40:
 								player.MovingDown = false
+							case 32:
+								player.EndShot()
 							}
 						}
 					}

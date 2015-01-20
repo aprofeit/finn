@@ -3,6 +3,7 @@ package main
 import "time"
 
 type Player struct {
+	Z           int     `json:"z"`
 	ClientID    string  `json:"id"`
 	PositionX   float64 `json:"position_x"`
 	PositionY   float64 `json:"position_y"`
@@ -16,9 +17,35 @@ type Player struct {
 	MovingRight bool
 	Width       float64 `json:"width"`
 	Height      float64 `json:"height"`
+	hasShot     bool
 }
 
 const WALK_RATE float64 = 0.16
+const BULLET_SPEED float64 = 0.5
+
+func (p *Player) StartShot(w *World) {
+	if p.hasShot {
+		return
+	} else {
+		p.hasShot = true
+		var bullet *Bullet
+		switch p.Direction {
+		case "up":
+			bullet = NewBullet(p.PositionX, p.PositionY, 0, -BULLET_SPEED)
+		case "down":
+			bullet = NewBullet(p.PositionX, p.PositionY, 0, BULLET_SPEED)
+		case "left":
+			bullet = NewBullet(p.PositionX, p.PositionY, -BULLET_SPEED, 0)
+		case "right":
+			bullet = NewBullet(p.PositionX, p.PositionY, 0, BULLET_SPEED)
+		}
+		w.AddProjectile(bullet)
+	}
+}
+
+func (p *Player) EndShot() {
+	p.hasShot = false
+}
 
 func (p *Player) Update(elapsed time.Duration, world *World) {
 	if p.MovingUp {
