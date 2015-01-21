@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -21,6 +22,7 @@ type World struct {
 	Rooms         []*Rect
 	currentRegion int
 	projectiles   []*Bullet
+	sync.Mutex
 }
 
 func (w *World) Update(updates chan *World) {
@@ -62,11 +64,13 @@ func (w *World) Tiles() []*Tile {
 
 func (w *World) MarshalMembers(current *Player) ([]byte, error) {
 	otherPlayers := []*Player{}
+	w.Lock()
 	for _, player := range w.Players {
 		if player.ClientID != current.ClientID {
 			otherPlayers = append(otherPlayers, player)
 		}
 	}
+	w.Unlock()
 	return json.Marshal(map[string]interface{}{
 		"members": otherPlayers,
 		"current": current,
@@ -110,10 +114,14 @@ func (w *World) AddPlayer(id string) {
 		Height:    0.3,
 	}
 
+	w.Lock()
+	defer w.Unlock()
 	w.Players = append(w.Players, player)
 }
 
 func (w *World) RemovePlayer(id string) {
+	w.Lock()
+	defer w.Unlock()
 	for i, player := range w.Players {
 		if player.ClientID == id {
 			w.Players = append(w.Players[:i], w.Players[i+1:]...)

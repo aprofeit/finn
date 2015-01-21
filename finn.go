@@ -31,11 +31,13 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			world := <-h.WorldUpdates
 
 			var current *Player
+			world.Lock()
 			for _, player := range world.Players {
 				if player.ClientID == playerID {
 					current = player
 				}
 			}
+			world.Unlock()
 			blob, err := world.MarshalMembers(current)
 			if err != nil {
 				log.Errorf("Marshaling world update %v", world)
