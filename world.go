@@ -28,12 +28,14 @@ type World struct {
 func (w *World) Update(updates chan *World) {
 	for now := range time.Tick(time.Second / 30) {
 		last := time.Now()
+		w.Lock()
 		for _, player := range w.Players {
 			player.Update(time.Since(last), w)
 		}
 		for _, bullet := range w.projectiles {
 			bullet.Update(time.Since(last), w)
 		}
+		w.Unlock()
 		last = now
 		updates <- w
 	}
@@ -64,16 +66,15 @@ func (w *World) Tiles() []*Tile {
 
 func (w *World) MarshalMembers(current *Player) ([]byte, error) {
 	otherPlayers := []*Player{}
-	w.Lock()
 	for _, player := range w.Players {
 		if player.ClientID != current.ClientID {
 			otherPlayers = append(otherPlayers, player)
 		}
 	}
-	w.Unlock()
 	return json.Marshal(map[string]interface{}{
-		"members": otherPlayers,
-		"current": current,
+		"members":     otherPlayers,
+		"projectiles": w.projectiles,
+		"current":     current,
 	})
 }
 
@@ -102,16 +103,17 @@ func NewWorld() *World {
 
 func (w *World) AddPlayer(id string) {
 	player := &Player{
-		Z:         1,
-		ClientID:  id,
-		PositionX: 1,
-		PositionY: 1,
-		AnchorX:   0.5,
-		AnchorY:   0.25,
-		Texture:   "sprites/south2.png",
-		Direction: "none",
-		Width:     0.4,
-		Height:    0.3,
+		Z:             1,
+		ClientID:      id,
+		PositionX:     1,
+		PositionY:     1,
+		AnchorX:       0.5,
+		AnchorY:       0.25,
+		Texture:       "sprites/south2.png",
+		Direction:     "none",
+		Width:         0.4,
+		Height:        0.3,
+		lastDirection: "down",
 	}
 
 	w.Lock()

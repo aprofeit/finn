@@ -3,25 +3,26 @@ package main
 import "time"
 
 type Player struct {
-	Z           int     `json:"z"`
-	ClientID    string  `json:"id"`
-	PositionX   float64 `json:"position_x"`
-	PositionY   float64 `json:"position_y"`
-	AnchorX     float64 `json:"anchor_x"`
-	AnchorY     float64 `json:"anchor_y"`
-	Texture     string  `json:"texture"`
-	Direction   string  `json:"direction"`
-	MovingUp    bool
-	MovingDown  bool
-	MovingLeft  bool
-	MovingRight bool
-	Width       float64 `json:"width"`
-	Height      float64 `json:"height"`
-	hasShot     bool
+	Z             int     `json:"z"`
+	ClientID      string  `json:"id"`
+	PositionX     float64 `json:"position_x"`
+	PositionY     float64 `json:"position_y"`
+	AnchorX       float64 `json:"anchor_x"`
+	AnchorY       float64 `json:"anchor_y"`
+	Texture       string  `json:"texture"`
+	Direction     string  `json:"direction"`
+	MovingUp      bool
+	MovingDown    bool
+	MovingLeft    bool
+	MovingRight   bool
+	Width         float64 `json:"width"`
+	Height        float64 `json:"height"`
+	hasShot       bool
+	lastDirection string
 }
 
-const WALK_RATE float64 = 0.16
-const BULLET_SPEED float64 = 0.5
+const WALK_RATE float64 = 0.15
+const BULLET_SPEED float64 = 0.25
 
 func (p *Player) StartShot(w *World) {
 	if p.hasShot {
@@ -29,7 +30,7 @@ func (p *Player) StartShot(w *World) {
 	} else {
 		p.hasShot = true
 		var bullet *Bullet
-		switch p.Direction {
+		switch p.lastDirection {
 		case "up":
 			bullet = NewBullet(p.PositionX, p.PositionY, 0, -BULLET_SPEED)
 		case "down":

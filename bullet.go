@@ -3,7 +3,10 @@ package main
 import "time"
 
 type Bullet struct {
-	PositionX, PositionY, VelocityX, VelocityY float64
+	PositionX float64 `json:"position_x"`
+	PositionY float64 `json:"position_y"`
+	VelocityX float64 `json:"velocity_x"`
+	VelocityY float64 `json:"velocity_y"`
 }
 
 func NewBullet(x, y, xVel, yVel float64) *Bullet {
