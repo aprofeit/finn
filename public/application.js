@@ -80,6 +80,7 @@ World = (function() {
     var _this = this;
     this.stage = new PIXI.Stage(0x303030);
     this.renderer = PIXI.autoDetectRenderer(1000, 600);
+    this.projectiles = new Backbone.Collection();
     this.members = new Players();
     this.currentPlayer = new Player();
     this.addedPlayerToStage = false;
@@ -105,10 +106,17 @@ World = (function() {
         player.sprite.position.x = (player.get("position_x") + _this.xOff) * 100;
         return player.sprite.position.y = (player.get("position_y") + _this.yOff) * 100;
       });
-      return _this.tiles.forEach(function(tile) {
+      _this.tiles.forEach(function(tile) {
         tile.sprite.position.x = (tile.get("x") + _this.xOff) * 100;
         return tile.sprite.position.y = (tile.get("y") + _this.yOff) * 100;
       });
+      return _this.projectiles.forEach(function(projectile) {
+        projectile.sprite.position.x = (projectile.get("x") + _this.xOff) * 100;
+        return projectile.sprite.position.y = (projectile.get("y") + _this.yOff) * 100;
+      });
+    });
+    this.tiles.on("sync", function() {
+      return _this.sort();
     });
     this.tiles.on("add", function(tile) {
       var sprite;
@@ -120,7 +128,7 @@ World = (function() {
         sprite.width = 100;
         sprite.height = 100;
         _this.stage.addChild(sprite);
-        tile.sprite = sprite;
+        return tile.sprite = sprite;
       } else if (tile.get("kind") === "floor") {
         sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/grass.png"));
         sprite.z = 0;
@@ -129,9 +137,26 @@ World = (function() {
         sprite.width = 100;
         sprite.height = 100;
         _this.stage.addChild(sprite);
-        tile.sprite = sprite;
+        return tile.sprite = sprite;
       }
-      return _this.sort();
+    });
+    this.projectiles.on("add", function(projectile) {
+      var sprite;
+      sprite = new PIXI.Sprite(PIXI.Texture.fromImage(projectile.get("texture")));
+      sprite.z = 0.1;
+      sprite.position.x = (projectile.get("position_x") + _this.xOff) * 100;
+      sprite.position.y = (projectile.get("position_y") + _this.yOff) * 100;
+      _this.stage.addChild(sprite);
+      return projectile.sprite = sprite;
+    });
+    this.projectiles.on("change", function(projectile) {
+      var sprite;
+      sprite = projectile.sprite;
+      sprite.position.x = (projectile.get("position_x") + _this.xOff) * 100;
+      return sprite.position.y = (projectile.get("position_y") + _this.yOff) * 100;
+    });
+    this.projectiles.on("remove", function(projectile) {
+      return _this.stage.removeChild(projectile.sprite);
     });
     this.members.on("add", function(player) {
       var sprite;
@@ -172,6 +197,7 @@ World = (function() {
   World.prototype.update = function(update) {
     this.currentPlayer.set(update.current);
     this.members.set(update.members);
+    this.projectiles.set(update.projectiles);
     this.members.forEach(function(player) {
       return player.setAnimationFrame();
     });

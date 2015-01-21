@@ -24,13 +24,21 @@ type Player struct {
 const WALK_RATE float64 = 0.15
 const BULLET_SPEED float64 = 0.25
 
+func (p *Player) Facing() string {
+	if p.Direction != "none" {
+		return p.Direction
+	} else {
+		return p.lastDirection
+	}
+}
+
 func (p *Player) StartShot(w *World) {
 	if p.hasShot {
 		return
 	} else {
 		p.hasShot = true
 		var bullet *Bullet
-		switch p.lastDirection {
+		switch p.Facing() {
 		case "up":
 			bullet = NewBullet(p.PositionX, p.PositionY, 0, -BULLET_SPEED)
 		case "down":
@@ -38,7 +46,7 @@ func (p *Player) StartShot(w *World) {
 		case "left":
 			bullet = NewBullet(p.PositionX, p.PositionY, -BULLET_SPEED, 0)
 		case "right":
-			bullet = NewBullet(p.PositionX, p.PositionY, 0, BULLET_SPEED)
+			bullet = NewBullet(p.PositionX, p.PositionY, BULLET_SPEED, 0)
 		}
 		w.AddProjectile(bullet)
 	}
@@ -82,6 +90,9 @@ func (p *Player) Update(elapsed time.Duration, world *World) {
 		}
 	}
 	if !p.MovingRight && !p.MovingLeft && !p.MovingUp && !p.MovingDown {
+		if p.Direction != "none" {
+			p.lastDirection = p.Direction
+		}
 		p.Direction = "none"
 	}
 }

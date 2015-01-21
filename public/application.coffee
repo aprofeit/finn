@@ -51,6 +51,7 @@ class World
   constructor: (options) ->
     @stage = new PIXI.Stage(0x303030)
     @renderer = PIXI.autoDetectRenderer(1000, 600)
+    @projectiles = new Backbone.Collection()
     @members = new Players()
     @currentPlayer = new Player()
     @addedPlayerToStage = false
@@ -80,6 +81,13 @@ class World
         tile.sprite.position.x = (tile.get("x") + @xOff) * 100
         tile.sprite.position.y = (tile.get("y") + @yOff) * 100
 
+      @projectiles.forEach (projectile) =>
+        projectile.sprite.position.x = (projectile.get("x") + @xOff) * 100
+        projectile.sprite.position.y = (projectile.get("y") + @yOff) * 100
+
+    @tiles.on "sync", =>
+      @sort()
+
     @tiles.on "add", (tile) =>
       if tile.get("kind") == "wall"
         sprite = new PIXI.Sprite(PIXI.Texture.fromImage("sprites/wall.png"))
@@ -100,7 +108,21 @@ class World
         @stage.addChild(sprite)
         tile.sprite = sprite
 
-      @sort()
+    @projectiles.on "add", (projectile) =>
+      sprite = new PIXI.Sprite(PIXI.Texture.fromImage(projectile.get("texture")))
+      sprite.z = 0.1
+      sprite.position.x = (projectile.get("position_x") + @xOff) * 100
+      sprite.position.y = (projectile.get("position_y") + @yOff)* 100
+      @stage.addChild(sprite)
+      projectile.sprite = sprite
+
+    @projectiles.on "change", (projectile) =>
+      sprite = projectile.sprite
+      sprite.position.x = (projectile.get("position_x") + @xOff) * 100
+      sprite.position.y = (projectile.get("position_y") + @yOff)* 100
+
+    @projectiles.on "remove", (projectile) =>
+      @stage.removeChild(projectile.sprite)
 
     @members.on "add", (player) =>
       sprite = new PIXI.Sprite(PIXI.Texture.fromImage(player.get("texture")))
@@ -130,10 +152,10 @@ class World
     @websocket.onopen = =>
       @tiles.fetch()
 
-
   update: (update) ->
     @currentPlayer.set(update.current)
     @members.set(update.members)
+    @projectiles.set(update.projectiles)
     @members.forEach (player) ->
       player.setAnimationFrame()
     @currentPlayer.setAnimationFrame()

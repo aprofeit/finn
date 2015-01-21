@@ -7,10 +7,11 @@ type Bullet struct {
 	PositionY float64 `json:"position_y"`
 	VelocityX float64 `json:"velocity_x"`
 	VelocityY float64 `json:"velocity_y"`
+	Texture   string  `json:"texture"`
 }
 
 func NewBullet(x, y, xVel, yVel float64) *Bullet {
-	return &Bullet{x, y, xVel, yVel}
+	return &Bullet{x, y, xVel, yVel, "sprites/bullet.png"}
 }
 
 func (b *Bullet) Update(elapsed time.Duration, world *World) {
