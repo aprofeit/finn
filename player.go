@@ -22,8 +22,8 @@ type Player struct {
 	Dead          bool    `json:"dead"`
 }
 
-const WALK_RATE float64 = 0.15
-const BULLET_SPEED float64 = 0.25
+const WALK_RATE float64 = 0.05
+const BULLET_SPEED float64 = 0.15
 
 func (p *Player) Die(w *World) {
 	p.Dead = true
