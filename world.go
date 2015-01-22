@@ -82,8 +82,8 @@ func (w *World) MarshalTiles() ([]byte, error) {
 	return json.Marshal(w.Tiles())
 }
 
-const WORLD_WIDTH int = 101
-const WORLD_HEIGHT int = 61
+const WORLD_WIDTH int = 41
+const WORLD_HEIGHT int = 31
 
 func NewWorld() *World {
 	cols := make([][]*Tile, WORLD_WIDTH)
