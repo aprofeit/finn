@@ -1,0 +1,15 @@
+{
+	"ImportPath": "github.com/aprofeit/finn",
+	"GoVersion": "go1.3.3",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.6.2-10-g51fe59a",
+			"Rev": "51fe59aca108dc5680109e7b2051cbdcfa5a253c"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Rev": "1f87405cd9755fc388e111c4003caca4a2f52fa6"
+		}
+	]
+}
