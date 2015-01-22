@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -159,5 +160,9 @@ func main() {
 	}()
 
 	log.Info("Listening on 3000")
-	http.ListenAndServe(":3000", nil)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+	http.ListenAndServe(":"+port, nil)
 }
