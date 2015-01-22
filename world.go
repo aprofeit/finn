@@ -122,8 +122,6 @@ func (w *World) AddPlayer(id string) {
 }
 
 func (w *World) RemovePlayer(id string) {
-	w.Lock()
-	defer w.Unlock()
 	for i, player := range w.Players {
 		if player.ClientID == id {
 			w.Players = append(w.Players[:i], w.Players[i+1:]...)

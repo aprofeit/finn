@@ -70,20 +70,24 @@ class World
         player.sprite = sprite
         @sort()
         @addedPlayerToStage = true
-      @xOff = ((1000/100)/2.0) - player.get("position_x")
-      @yOff = ((600/100)/2.0) - player.get("position_y")
 
-      @members.forEach (player) =>
-        player.sprite.position.x = (player.get("position_x") + @xOff) * 100
-        player.sprite.position.y = (player.get("position_y") + @yOff) * 100
+      if player.get("dead")
+        @stage.removeChild(player.sprite)
+      else
+        @xOff = ((1000/100)/2.0) - player.get("position_x")
+        @yOff = ((600/100)/2.0) - player.get("position_y")
 
-      @tiles.forEach (tile) =>
-        tile.sprite.position.x = (tile.get("x") + @xOff) * 100
-        tile.sprite.position.y = (tile.get("y") + @yOff) * 100
+        @members.forEach (player) =>
+          player.sprite.position.x = (player.get("position_x") + @xOff) * 100
+          player.sprite.position.y = (player.get("position_y") + @yOff) * 100
 
-      @projectiles.forEach (projectile) =>
-        projectile.sprite.position.x = (projectile.get("x") + @xOff) * 100
-        projectile.sprite.position.y = (projectile.get("y") + @yOff) * 100
+        @tiles.forEach (tile) =>
+          tile.sprite.position.x = (tile.get("x") + @xOff) * 100
+          tile.sprite.position.y = (tile.get("y") + @yOff) * 100
+
+        @projectiles.forEach (projectile) =>
+          projectile.sprite.position.x = (projectile.get("x") + @xOff) * 100
+          projectile.sprite.position.y = (projectile.get("y") + @yOff) * 100
 
     @tiles.on "sync", =>
       @sort()
@@ -139,9 +143,12 @@ class World
       @stage.removeChild(player.sprite)
 
     @members.on "change", (player) =>
-      sprite = player.sprite
-      sprite.position.x = (player.get("position_x") + @xOff) * 100
-      sprite.position.y = (player.get("position_y") + @yOff)* 100
+      if player.get("dead")
+        @stage.removeChild(player.sprite)
+      else
+        sprite = player.sprite
+        sprite.position.x = (player.get("position_x") + @xOff) * 100
+        sprite.position.y = (player.get("position_y") + @yOff)* 100
 
   connect: ->
     @websocket = new WebSocket("ws://#{window.location.host}/websocket")

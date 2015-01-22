@@ -11,18 +11,23 @@ type Player struct {
 	AnchorY       float64 `json:"anchor_y"`
 	Texture       string  `json:"texture"`
 	Direction     string  `json:"direction"`
-	MovingUp      bool
-	MovingDown    bool
-	MovingLeft    bool
-	MovingRight   bool
+	MovingUp      bool    `json:"-"`
+	MovingDown    bool    `json:"-"`
+	MovingLeft    bool    `json:"-"`
+	MovingRight   bool    `json:"-"`
 	Width         float64 `json:"width"`
 	Height        float64 `json:"height"`
-	hasShot       bool
-	lastDirection string
+	hasShot       bool    `json:"-"`
+	lastDirection string  `json:"-"`
+	Dead          bool    `json:"dead"`
 }
 
 const WALK_RATE float64 = 0.15
 const BULLET_SPEED float64 = 0.25
+
+func (p *Player) Die(w *World) {
+	p.Dead = true
+}
 
 func (p *Player) Facing() string {
 	if p.Direction != "none" {

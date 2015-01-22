@@ -100,20 +100,24 @@ World = (function() {
         _this.sort();
         _this.addedPlayerToStage = true;
       }
-      _this.xOff = ((1000 / 100) / 2.0) - player.get("position_x");
-      _this.yOff = ((600 / 100) / 2.0) - player.get("position_y");
-      _this.members.forEach(function(player) {
-        player.sprite.position.x = (player.get("position_x") + _this.xOff) * 100;
-        return player.sprite.position.y = (player.get("position_y") + _this.yOff) * 100;
-      });
-      _this.tiles.forEach(function(tile) {
-        tile.sprite.position.x = (tile.get("x") + _this.xOff) * 100;
-        return tile.sprite.position.y = (tile.get("y") + _this.yOff) * 100;
-      });
-      return _this.projectiles.forEach(function(projectile) {
-        projectile.sprite.position.x = (projectile.get("x") + _this.xOff) * 100;
-        return projectile.sprite.position.y = (projectile.get("y") + _this.yOff) * 100;
-      });
+      if (player.get("dead")) {
+        return _this.stage.removeChild(player.sprite);
+      } else {
+        _this.xOff = ((1000 / 100) / 2.0) - player.get("position_x");
+        _this.yOff = ((600 / 100) / 2.0) - player.get("position_y");
+        _this.members.forEach(function(player) {
+          player.sprite.position.x = (player.get("position_x") + _this.xOff) * 100;
+          return player.sprite.position.y = (player.get("position_y") + _this.yOff) * 100;
+        });
+        _this.tiles.forEach(function(tile) {
+          tile.sprite.position.x = (tile.get("x") + _this.xOff) * 100;
+          return tile.sprite.position.y = (tile.get("y") + _this.yOff) * 100;
+        });
+        return _this.projectiles.forEach(function(projectile) {
+          projectile.sprite.position.x = (projectile.get("x") + _this.xOff) * 100;
+          return projectile.sprite.position.y = (projectile.get("y") + _this.yOff) * 100;
+        });
+      }
     });
     this.tiles.on("sync", function() {
       return _this.sort();
@@ -175,9 +179,13 @@ World = (function() {
     });
     this.members.on("change", function(player) {
       var sprite;
-      sprite = player.sprite;
-      sprite.position.x = (player.get("position_x") + _this.xOff) * 100;
-      return sprite.position.y = (player.get("position_y") + _this.yOff) * 100;
+      if (player.get("dead")) {
+        return _this.stage.removeChild(player.sprite);
+      } else {
+        sprite = player.sprite;
+        sprite.position.x = (player.get("position_x") + _this.xOff) * 100;
+        return sprite.position.y = (player.get("position_y") + _this.yOff) * 100;
+      }
     });
   }
 
