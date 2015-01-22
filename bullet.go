@@ -8,10 +8,13 @@ type Bullet struct {
 	VelocityX float64 `json:"velocity_x"`
 	VelocityY float64 `json:"velocity_y"`
 	Texture   string  `json:"texture"`
+	Width     float64 `json:"width"`
+	Height    float64 `json:"height"`
+	player    *Player
 }
 
-func NewBullet(x, y, xVel, yVel float64) *Bullet {
-	return &Bullet{x, y, xVel, yVel, "sprites/bullet.png"}
+func NewBullet(x, y, xVel, yVel float64, p *Player) *Bullet {
+	return &Bullet{x, y, xVel, yVel, "sprites/bullet.png", 0.1, 0.1, p}
 }
 
 func (b *Bullet) Update(elapsed time.Duration, world *World) {
@@ -20,7 +23,10 @@ func (b *Bullet) Update(elapsed time.Duration, world *World) {
 		b.PositionY += b.VelocityY
 
 		for _, player := range world.Players {
-			if player.PositionX < b.PositionX && player.PositionX+player.Width > b.PositionX && player.PositionY < b.PositionY && player.PositionY+player.Height > b.PositionY {
+			if player == b.player {
+				continue
+			}
+			if (player.PositionX < b.PositionX && player.PositionX+player.Width > b.PositionX && player.PositionY < b.PositionY && player.PositionY+player.Height > b.PositionY) || (player.PositionX < b.PositionX+b.Width && player.PositionX+player.Width > b.PositionX+b.Width && player.PositionY < b.PositionY+b.Height && player.PositionY+player.Height > b.PositionY+b.Height) {
 				player.Die(world)
 				world.RemoveProjectile(b)
 			}

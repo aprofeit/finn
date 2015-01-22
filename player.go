@@ -45,13 +45,13 @@ func (p *Player) StartShot(w *World) {
 		var bullet *Bullet
 		switch p.Facing() {
 		case "up":
-			bullet = NewBullet(p.PositionX, p.PositionY, 0, -BULLET_SPEED)
+			bullet = NewBullet(p.PositionX+p.Width/2-0.05, p.PositionY, 0, -BULLET_SPEED, p)
 		case "down":
-			bullet = NewBullet(p.PositionX, p.PositionY, 0, BULLET_SPEED)
+			bullet = NewBullet(p.PositionX+p.Width/2-0.05, p.PositionY, 0, BULLET_SPEED, p)
 		case "left":
-			bullet = NewBullet(p.PositionX, p.PositionY, -BULLET_SPEED, 0)
+			bullet = NewBullet(p.PositionX, p.PositionY+p.Height/2-0.05, -BULLET_SPEED, 0, p)
 		case "right":
-			bullet = NewBullet(p.PositionX, p.PositionY, BULLET_SPEED, 0)
+			bullet = NewBullet(p.PositionX, p.PositionY+p.Height/2-0.05, BULLET_SPEED, 0, p)
 		}
 		w.AddProjectile(bullet)
 	}
