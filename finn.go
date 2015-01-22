@@ -38,6 +38,9 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			world.Unlock()
+			if current == nil {
+				return
+			}
 			blob, err := world.MarshalMembers(current)
 			if err != nil {
 				log.Errorf("Marshaling world update %v", world)
