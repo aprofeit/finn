@@ -159,10 +159,10 @@ func main() {
 		}
 	}()
 
-	log.Info("Listening on 3000")
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
 	}
+	log.Infof("Listening on %v", port)
 	http.ListenAndServe(":"+port, nil)
 }
