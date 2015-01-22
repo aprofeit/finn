@@ -388,7 +388,7 @@ func (w *World) Carve(x, y int) {
 	tile.region = w.currentRegion
 }
 
-const NUM_ROOM_ATTEMPTS int = 1000
+const NUM_ROOM_ATTEMPTS int = 100
 const ROOM_EXTRA_SIZE int = 3
 
 func (w *World) addRooms() {
