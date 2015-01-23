@@ -38,7 +38,7 @@ func (p *Player) Facing() string {
 }
 
 func (p *Player) StartShot(w *World) {
-	if p.hasShot {
+	if p.hasShot || p.Dead {
 		return
 	} else {
 		p.hasShot = true
@@ -62,6 +62,9 @@ func (p *Player) EndShot() {
 }
 
 func (p *Player) Update(elapsed time.Duration, world *World) {
+	if p.Dead {
+		return
+	}
 	if p.MovingUp {
 		p.Direction = "up"
 		if tile := world.TileGrid[int(p.PositionX)][int(p.PositionY-WALK_RATE)]; tile.Kind != "wall" {
