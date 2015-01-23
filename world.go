@@ -16,12 +16,18 @@ type Tile struct {
 	region int    `json:"-"`
 }
 
+type playerUpdater struct {
+	c  chan *World
+	id string
+}
+
 type World struct {
-	Players       []*Player
-	TileGrid      [][]*Tile
-	Rooms         []*Rect
-	currentRegion int
-	projectiles   []*Bullet
+	Players        []*Player
+	TileGrid       [][]*Tile
+	Rooms          []*Rect
+	currentRegion  int
+	projectiles    []*Bullet
+	playerUpdaters []*playerUpdater
 	sync.Mutex
 }
 
@@ -37,7 +43,9 @@ func (w *World) Update(updates chan *World) {
 		}
 		w.Unlock()
 		last = now
-		updates <- w
+		for _, updater := range w.playerUpdaters {
+			updater.c <- w
+		}
 	}
 }
 
@@ -101,7 +109,7 @@ func NewWorld() *World {
 	}
 }
 
-func (w *World) AddPlayer(id string) {
+func (w *World) AddPlayer(id string) *playerUpdater {
 	player := &Player{
 		Z:             1,
 		ClientID:      id,
@@ -119,12 +127,21 @@ func (w *World) AddPlayer(id string) {
 	w.Lock()
 	defer w.Unlock()
 	w.Players = append(w.Players, player)
+	updater := &playerUpdater{c: make(chan *World), id: player.ClientID}
+	w.playerUpdaters = append(w.playerUpdaters, updater)
+	return updater
 }
 
 func (w *World) RemovePlayer(id string) {
 	for i, player := range w.Players {
 		if player.ClientID == id {
 			w.Players = append(w.Players[:i], w.Players[i+1:]...)
+
+			for j, updater := range w.playerUpdaters {
+				if updater.id == id {
+					w.playerUpdaters = append(w.playerUpdaters[:j], w.playerUpdaters[j+1:]...)
+				}
+			}
 			return
 		}
 	}
