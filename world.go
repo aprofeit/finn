@@ -31,7 +31,7 @@ type World struct {
 	sync.Mutex
 }
 
-func (w *World) Update(updates chan *World) {
+func (w *World) Update() {
 	for now := range time.Tick(time.Second / 30) {
 		last := time.Now()
 		w.Lock()

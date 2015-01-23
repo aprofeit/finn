@@ -14,7 +14,6 @@ type WebSocketHandler struct {
 	websocket.Upgrader
 	ClientEvents chan *ClientEvent
 	World        *World
-	WorldUpdates chan *World
 }
 
 func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -84,14 +83,12 @@ func main() {
 	clientEvents := make(chan *ClientEvent)
 	world := NewWorld()
 	world.Generate()
-	updates := make(chan *World)
 
 	http.Handle("/", http.FileServer(http.Dir("public/")))
 	websocketHandler := &WebSocketHandler{
 		Upgrader:     websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024},
 		ClientEvents: clientEvents,
 		World:        world,
-		WorldUpdates: updates,
 	}
 	http.Handle("/websocket", websocketHandler)
 	http.HandleFunc("/tiles", func(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +112,7 @@ func main() {
 		}
 	})
 
-	go world.Update(updates)
+	go world.Update()
 
 	go func() {
 		for {
