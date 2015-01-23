@@ -90,8 +90,8 @@ func (w *World) MarshalTiles() ([]byte, error) {
 	return json.Marshal(w.Tiles())
 }
 
-const WORLD_WIDTH int = 41
-const WORLD_HEIGHT int = 31
+const WORLD_WIDTH int = 15
+const WORLD_HEIGHT int = 11
 
 func NewWorld() *World {
 	cols := make([][]*Tile, WORLD_WIDTH)
@@ -406,11 +406,11 @@ func (w *World) Carve(x, y int) {
 }
 
 const NUM_ROOM_ATTEMPTS int = 100
-const ROOM_EXTRA_SIZE int = 3
+const ROOM_EXTRA_SIZE int = 1
 
 func (w *World) addRooms() {
 	for i := 0; i < NUM_ROOM_ATTEMPTS; i++ {
-		size := ((rand.Intn(3+ROOM_EXTRA_SIZE) + 1) * 2) + 1
+		size := ((rand.Intn(1+ROOM_EXTRA_SIZE) + 1) * 2) + 1
 		rectangularity := rand.Intn(1+size/2) * 2
 		width := size
 		height := size

@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -80,6 +82,7 @@ func init() {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	clientEvents := make(chan *ClientEvent)
 	world := NewWorld()
 	world.Generate()
