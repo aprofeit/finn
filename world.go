@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"sync"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type Tile struct {
@@ -90,8 +92,8 @@ func (w *World) MarshalTiles() ([]byte, error) {
 	return json.Marshal(w.Tiles())
 }
 
-const WORLD_WIDTH int = 15
-const WORLD_HEIGHT int = 11
+const WORLD_WIDTH int = 65
+const WORLD_HEIGHT int = 55
 
 func NewWorld() *World {
 	cols := make([][]*Tile, WORLD_WIDTH)
@@ -166,7 +168,7 @@ func (w *World) Generate() {
 }
 
 func (w *World) connectRegions() {
-	connectorRegions := map[*Tile][]int{}
+	connectorRegions := make(map[*Tile]map[int]bool)
 	for x := range w.TileGrid {
 		for y, tile := range w.TileGrid[x] {
 			if x == 0 || x == len(w.TileGrid)-1 || y == 0 || y == len(w.TileGrid[x])-1 {
@@ -177,7 +179,7 @@ func (w *World) connectRegions() {
 				continue
 			}
 
-			regions := []int{}
+			regions := make(map[int]bool)
 			for _, adjs := range []struct{ x, y int }{
 				{x, y + 1},
 				{x, y - 1},
@@ -188,15 +190,7 @@ func (w *World) connectRegions() {
 				if adjTile.Kind != "floor" {
 					continue
 				}
-				regionAlreadyAdded := false
-				for _, r := range regions {
-					if adjTile.region == r {
-						regionAlreadyAdded = true
-					}
-				}
-				if !regionAlreadyAdded {
-					regions = append(regions, adjTile.region)
-				}
+				regions[adjTile.region] = true
 			}
 
 			if len(regions) < 2 {
@@ -212,51 +206,55 @@ func (w *World) connectRegions() {
 		connectors = append(connectors, key)
 	}
 
-	merged := map[int]int{}
-	openRegions := []int{}
-	for i := 0; i <= w.currentRegion; i++ {
+	merged := make(map[int]int)
+	openRegions := make(map[int]bool)
+	for i := 1; i <= w.currentRegion; i++ {
 		merged[i] = i
-		openRegions = append(openRegions, i)
+		openRegions[i] = true
 	}
 
+	log.Debugf("regions")
+	for source, destination := range merged {
+		log.Debugf("%d -> %d", source, destination)
+	}
 	for len(openRegions) > 1 {
 		connector := connectors[rand.Intn(len(connectors))]
 		w.addJunction(connector)
 
-		regions := []int{}
-		for _, region := range connectorRegions[connector] {
-			alreadyMember := false
-			for _, r := range regions {
-				if r == merged[region] {
-					alreadyMember = true
-				}
-			}
-			if !alreadyMember {
-				regions = append(regions, merged[region])
-			}
+		regions := make(map[int]bool)
+		for region := range connectorRegions[connector] {
+			regions[merged[region]] = true
 		}
-		dest := regions[0]
-		sources := regions[1:]
+		var dest int
+		var sources []int
+		i := 0
+		for region := range regions {
+			if i == 0 {
+				dest = region
+			} else {
+				sources = append(sources, region)
+			}
+			i++
+		}
+		if len(sources) == 0 {
+			sources = append(sources, dest)
+		}
 
-		for i := 0; i < w.currentRegion; i++ {
-			sourcesContainsMerged := false
+		log.Debugf("dest: %v sources: %v", dest, sources)
+		for i := range merged {
 			for _, source := range sources {
 				if source == merged[i] {
-					sourcesContainsMerged = true
+					merged[i] = dest
 				}
-			}
-
-			if sourcesContainsMerged {
-				merged[i] = dest
 			}
 		}
+		log.Debugf("regions")
+		for source, destination := range merged {
+			log.Debugf("%d -> %d", source, destination)
+		}
 
-		for i, region := range openRegions {
-			for _, source := range sources {
-				if region == source {
-					openRegions = append(openRegions[:i], openRegions[i+1:]...)
-				}
-			}
+		for _, source := range sources {
+			delete(openRegions, source)
 		}
 
 		for i, c := range connectors {
@@ -274,8 +272,8 @@ func (w *World) connectRegions() {
 				continue
 			}
 
-			regions = []int{}
-			for _, region := range connectorRegions[c] {
+			regions := []int{}
+			for region := range connectorRegions[c] {
 				regions = append(regions, merged[region])
 			}
 			if len(regions) > 1 {
@@ -292,6 +290,39 @@ func (w *World) addJunction(tile *Tile) {
 }
 
 func (w *World) removeDeadEnds() {
+	done := false
+	for !done {
+		done = true
+
+		for _, tile := range w.Tiles() {
+			if tile.X == 0 || tile.X == len(w.TileGrid)-1 || tile.Y == 0 || tile.Y == len(w.TileGrid[tile.X])-1 {
+				continue
+			}
+
+			if tile.Kind == "wall" {
+				continue
+			}
+
+			exits := 0
+			for _, adjs := range []struct{ x, y int }{
+				{tile.X, tile.Y + 1},
+				{tile.X, tile.Y - 1},
+				{tile.X + 1, tile.Y},
+				{tile.X - 1, tile.Y},
+			} {
+				adjTile := w.TileGrid[adjs.x][adjs.y]
+				if adjTile.Kind != "wall" {
+					exits++
+				}
+			}
+
+			if exits != 1 {
+				continue
+			}
+			done = false
+			tile.Kind = "wall"
+		}
+	}
 }
 
 const WINDING_PERCENT int = 25
@@ -405,12 +436,12 @@ func (w *World) Carve(x, y int) {
 	tile.region = w.currentRegion
 }
 
-const NUM_ROOM_ATTEMPTS int = 100
+const NUM_ROOM_ATTEMPTS int = 200
 const ROOM_EXTRA_SIZE int = 1
 
 func (w *World) addRooms() {
 	for i := 0; i < NUM_ROOM_ATTEMPTS; i++ {
-		size := ((rand.Intn(1+ROOM_EXTRA_SIZE) + 1) * 2) + 1
+		size := ((rand.Intn(3+ROOM_EXTRA_SIZE) + 1) * 2) + 1
 		rectangularity := rand.Intn(1+size/2) * 2
 		width := size
 		height := size
