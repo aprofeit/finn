@@ -34,8 +34,18 @@ type World struct {
 	sync.Mutex
 }
 
+func (w *World) floorTiles() []*Tile {
+	floorTiles := []*Tile{}
+	for _, tile := range w.Tiles() {
+		if tile.Kind == "floor" {
+			floorTiles = append(floorTiles, tile)
+		}
+	}
+	return floorTiles
+}
+
 func (w *World) getSpawn() *Tile {
-	tiles := w.Tiles()
+	tiles := w.floorTiles()
 
 	return tiles[rand.Intn(len(tiles))]
 }
