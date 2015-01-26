@@ -26,7 +26,8 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Client connected %v", conn.RemoteAddr().String())
 
 	playerID := conn.RemoteAddr().String()
-	player := NewPlayer(playerID)
+	openTile := h.World.getSpawn()
+	player := NewPlayer(playerID, float64(openTile.X), float64(openTile.Y))
 	updater := h.World.AddPlayer(player)
 
 	go func() {

@@ -34,6 +34,12 @@ type World struct {
 	sync.Mutex
 }
 
+func (w *World) getSpawn() *Tile {
+	tiles := w.Tiles()
+
+	return tiles[rand.Intn(len(tiles))]
+}
+
 func (w *World) Update() {
 	for now := range time.Tick(time.Second / 30) {
 		last := time.Now()

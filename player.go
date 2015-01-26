@@ -25,12 +25,12 @@ type Player struct {
 const WALK_RATE float64 = 0.15
 const BULLET_SPEED float64 = 0.25
 
-func NewPlayer(id string) *Player {
+func NewPlayer(id string, x, y float64) *Player {
 	return &Player{
 		Z:             1,
 		ClientID:      id,
-		PositionX:     1,
-		PositionY:     1,
+		PositionX:     x,
+		PositionY:     y,
 		AnchorX:       0.5,
 		AnchorY:       0.25,
 		Texture:       "sprites/south2.png",
