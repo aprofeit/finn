@@ -112,21 +112,7 @@ func NewWorld() *World {
 	}
 }
 
-func (w *World) AddPlayer(id string) *playerUpdater {
-	player := &Player{
-		Z:             1,
-		ClientID:      id,
-		PositionX:     1,
-		PositionY:     1,
-		AnchorX:       0.5,
-		AnchorY:       0.25,
-		Texture:       "sprites/south2.png",
-		Direction:     "none",
-		Width:         0.4,
-		Height:        0.3,
-		lastDirection: "down",
-	}
-
+func (w *World) AddPlayer(player *Player) *playerUpdater {
 	w.Lock()
 	defer w.Unlock()
 	w.Players = append(w.Players, player)

@@ -25,6 +25,22 @@ type Player struct {
 const WALK_RATE float64 = 0.15
 const BULLET_SPEED float64 = 0.25
 
+func NewPlayer(id string) *Player {
+	return &Player{
+		Z:             1,
+		ClientID:      id,
+		PositionX:     1,
+		PositionY:     1,
+		AnchorX:       0.5,
+		AnchorY:       0.25,
+		Texture:       "sprites/south2.png",
+		Direction:     "none",
+		Width:         0.4,
+		Height:        0.3,
+		lastDirection: "down",
+	}
+}
+
 func (p *Player) Die(w *World) {
 	p.Dead = true
 }

@@ -26,7 +26,8 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Client connected %v", conn.RemoteAddr().String())
 
 	playerID := conn.RemoteAddr().String()
-	updater := h.World.AddPlayer(playerID)
+	player := NewPlayer(playerID)
+	updater := h.World.AddPlayer(player)
 
 	go func() {
 		for {
