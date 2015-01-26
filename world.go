@@ -109,8 +109,8 @@ func (w *World) MarshalTiles() ([]byte, error) {
 	return json.Marshal(w.Tiles())
 }
 
-const WORLD_WIDTH int = 101
-const WORLD_HEIGHT int = 57
+const WORLD_WIDTH int = 27
+const WORLD_HEIGHT int = 19
 
 func NewWorld() *World {
 	cols := make([][]*Tile, WORLD_WIDTH)
@@ -355,7 +355,7 @@ func (w *World) removeDeadEnds() {
 	}
 }
 
-const WINDING_PERCENT int = 25
+const WINDING_PERCENT int = 2
 
 func (w *World) GrowMaze(x, y int) {
 	pos := &Coordinate{x, y}
@@ -466,7 +466,7 @@ func (w *World) Carve(x, y int) {
 	tile.region = w.currentRegion
 }
 
-const NUM_ROOM_ATTEMPTS int = 200
+const NUM_ROOM_ATTEMPTS int = 1000
 const ROOM_EXTRA_SIZE int = 1
 
 func (w *World) addRooms() {
