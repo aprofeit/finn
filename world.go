@@ -55,7 +55,7 @@ func (w *World) Update() {
 		last := time.Now()
 		w.Lock()
 		for _, player := range w.Players {
-			player.Update(time.Since(last), w)
+			player.Update(time.Since(last))
 		}
 		for _, bullet := range w.projectiles {
 			bullet.Update(time.Since(last), w)
@@ -131,6 +131,7 @@ func NewWorld() *World {
 func (w *World) AddPlayer(player *Player) *playerUpdater {
 	w.Lock()
 	defer w.Unlock()
+	player.world = w
 	w.Players = append(w.Players, player)
 	updater := &playerUpdater{c: make(chan *World), id: player.ClientID}
 	w.playerUpdaters = append(w.playerUpdaters, updater)

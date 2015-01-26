@@ -20,6 +20,11 @@ type Player struct {
 	hasShot       bool    `json:"-"`
 	lastDirection string  `json:"-"`
 	Dead          bool    `json:"dead"`
+	world         *World  `json:"-"`
+}
+
+type FloatCoordinate struct {
+	X, Y float64
 }
 
 const WALK_RATE float64 = 0.15
@@ -77,40 +82,61 @@ func (p *Player) EndShot() {
 	p.hasShot = false
 }
 
-func (p *Player) Update(elapsed time.Duration, world *World) {
+func (p *Player) corners() []*FloatCoordinate {
+	return []*FloatCoordinate{
+		&FloatCoordinate{p.PositionX, p.PositionY},
+		&FloatCoordinate{p.PositionX, p.PositionY + p.Height},
+		&FloatCoordinate{p.PositionX + p.Width, p.PositionY},
+		&FloatCoordinate{p.PositionX + p.Width, p.PositionY + p.Height},
+	}
+}
+
+func (p *Player) collidesAt(x, y float64) bool {
+	collides := false
+	for _, coord := range p.corners() {
+		tile := p.world.TileGrid[int(coord.X+x)][int(coord.Y+y)]
+		if tile.Kind == "wall" {
+			collides = true
+		}
+	}
+
+	return collides
+}
+
+func (p *Player) Update(elapsed time.Duration) {
 	if p.Dead {
 		return
 	}
 	if p.MovingUp {
 		p.Direction = "up"
-		if tile := world.TileGrid[int(p.PositionX)][int(p.PositionY-WALK_RATE)]; tile.Kind != "wall" {
-			p.PositionY -= WALK_RATE
+		if p.collidesAt(0, -WALK_RATE) {
+			p.PositionY = float64(int(p.PositionY)) + 0.001
 		} else {
-			p.PositionY = float64(int(p.PositionY))
+			p.PositionY -= WALK_RATE
 		}
 	}
 	if p.MovingDown {
 		p.Direction = "down"
-		if tile := world.TileGrid[int(p.PositionX)][int(p.PositionY+WALK_RATE+p.Height)]; tile.Kind != "wall" {
-			p.PositionY += WALK_RATE
+		if p.collidesAt(0, WALK_RATE) {
+			p.PositionY = float64(int(p.PositionY+WALK_RATE+p.Height)) - p.Height - 0.001
 		} else {
-			p.PositionY = float64(int(p.PositionY+WALK_RATE+p.Height)) - p.Height
+			p.PositionY += WALK_RATE
 		}
 	}
 	if p.MovingLeft {
 		p.Direction = "left"
-		if tile := world.TileGrid[int(p.PositionX-WALK_RATE)][int(p.PositionY)]; tile.Kind != "wall" {
-			p.PositionX -= WALK_RATE
+		if p.collidesAt(-WALK_RATE, 0) {
+			p.PositionX = float64(int(p.PositionX)) + 0.001
 		} else {
-			p.PositionX = float64(int(p.PositionX))
+			p.PositionX -= WALK_RATE
 		}
 	}
 	if p.MovingRight {
 		p.Direction = "right"
-		if tile := world.TileGrid[int(p.PositionX+WALK_RATE+p.Width)][int(p.PositionY)]; tile.Kind != "wall" {
-			p.PositionX += WALK_RATE
+		if p.collidesAt(WALK_RATE, 0) {
+			p.PositionX = float64(int(p.PositionX+WALK_RATE+p.Width)) - p.Width - 0.001
 		} else {
-			p.PositionX = float64(int(p.PositionX+WALK_RATE+p.Width)) - p.Width
+			p.PositionX += WALK_RATE
 		}
 	}
 	if !p.MovingRight && !p.MovingLeft && !p.MovingUp && !p.MovingDown {
