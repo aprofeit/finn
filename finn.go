@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -80,10 +82,11 @@ func init() {
 }
 
 func main() {
-	// rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().UnixNano())
 	clientEvents := make(chan *ClientEvent)
 	world := NewWorld()
 	world.Generate()
+	world.Print(os.Stdout)
 
 	http.Handle("/", http.FileServer(http.Dir("public/")))
 	websocketHandler := &WebSocketHandler{
@@ -99,20 +102,6 @@ func main() {
 		}
 		w.Write(blob)
 	})
-	http.HandleFunc("/world", func(w http.ResponseWriter, r *http.Request) {
-		for y := 0; y < WORLD_HEIGHT; y++ {
-			for x := 0; x < WORLD_WIDTH; x++ {
-				switch tile := world.TileGrid[x][y]; tile.Kind {
-				case "wall":
-					w.Write([]byte("X"))
-				case "floor":
-					w.Write([]byte(" "))
-				}
-			}
-			w.Write([]byte("\n"))
-		}
-	})
-
 	go world.Update()
 
 	go func() {

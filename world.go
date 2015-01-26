@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
+	"io"
 	"math"
 	"math/rand"
 	"sync"
 	"time"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 type Tile struct {
@@ -30,6 +30,7 @@ type World struct {
 	currentRegion  int
 	projectiles    []*Bullet
 	playerUpdaters []*playerUpdater
+	connectors     map[*Tile]map[int]bool
 	sync.Mutex
 }
 
@@ -92,8 +93,8 @@ func (w *World) MarshalTiles() ([]byte, error) {
 	return json.Marshal(w.Tiles())
 }
 
-const WORLD_WIDTH int = 65
-const WORLD_HEIGHT int = 55
+const WORLD_WIDTH int = 101
+const WORLD_HEIGHT int = 57
 
 func NewWorld() *World {
 	cols := make([][]*Tile, WORLD_WIDTH)
@@ -167,8 +168,29 @@ func (w *World) Generate() {
 	w.removeDeadEnds()
 }
 
+func (w *World) Print(writer io.Writer) {
+	bufWriter := bufio.NewWriter(writer)
+	bufWriter.Write([]byte("\033[2J"))
+	for y := 0; y < WORLD_HEIGHT; y++ {
+		for x := 0; x < WORLD_WIDTH; x++ {
+			switch tile := w.TileGrid[x][y]; tile.Kind {
+			case "wall":
+				bufWriter.Write([]byte("▓▓"))
+			case "floor":
+				if tile.region == 0 {
+					bufWriter.Write([]byte("░░"))
+				} else {
+					bufWriter.Write([]byte("  "))
+				}
+			}
+		}
+		bufWriter.Write([]byte("\n"))
+	}
+	bufWriter.Flush()
+}
+
 func (w *World) connectRegions() {
-	connectorRegions := make(map[*Tile]map[int]bool)
+	w.connectors = make(map[*Tile]map[int]bool)
 	for x := range w.TileGrid {
 		for y, tile := range w.TileGrid[x] {
 			if x == 0 || x == len(w.TileGrid)-1 || y == 0 || y == len(w.TileGrid[x])-1 {
@@ -197,12 +219,12 @@ func (w *World) connectRegions() {
 				continue
 			}
 
-			connectorRegions[tile] = regions
+			w.connectors[tile] = regions
 		}
 	}
 
 	connectors := []*Tile{}
-	for key, _ := range connectorRegions {
+	for key, _ := range w.connectors {
 		connectors = append(connectors, key)
 	}
 
@@ -213,16 +235,12 @@ func (w *World) connectRegions() {
 		openRegions[i] = true
 	}
 
-	log.Debugf("regions")
-	for source, destination := range merged {
-		log.Debugf("%d -> %d", source, destination)
-	}
 	for len(openRegions) > 1 {
 		connector := connectors[rand.Intn(len(connectors))]
 		w.addJunction(connector)
 
 		regions := make(map[int]bool)
-		for region := range connectorRegions[connector] {
+		for region := range w.connectors[connector] {
 			regions[merged[region]] = true
 		}
 		var dest int
@@ -236,21 +254,18 @@ func (w *World) connectRegions() {
 			}
 			i++
 		}
-		if len(sources) == 0 {
-			sources = append(sources, dest)
-		}
 
-		log.Debugf("dest: %v sources: %v", dest, sources)
 		for i := range merged {
 			for _, source := range sources {
 				if source == merged[i] {
 					merged[i] = dest
+					for _, tile := range w.Tiles() {
+						if tile.region == source {
+							tile.region = dest
+						}
+					}
 				}
 			}
-		}
-		log.Debugf("regions")
-		for source, destination := range merged {
-			log.Debugf("%d -> %d", source, destination)
 		}
 
 		for _, source := range sources {
@@ -260,29 +275,42 @@ func (w *World) connectRegions() {
 		for i, c := range connectors {
 			if c.X == connector.X && c.Y == connector.Y+1 {
 				connectors = append(connectors[:i], connectors[i+1:]...)
+				w.removeConnector(c)
 				continue
 			} else if c.X == connector.X && c.Y == connector.Y-1 {
 				connectors = append(connectors[:i], connectors[i+1:]...)
+				w.removeConnector(c)
 				continue
 			} else if c.X+1 == connector.X && c.Y == connector.Y {
 				connectors = append(connectors[:i], connectors[i+1:]...)
+				w.removeConnector(c)
 				continue
 			} else if c.X-1 == connector.X && c.Y == connector.Y {
 				connectors = append(connectors[:i], connectors[i+1:]...)
+				w.removeConnector(c)
 				continue
 			}
 
-			regions := []int{}
-			for region := range connectorRegions[c] {
-				regions = append(regions, merged[region])
+			regions := map[int]bool{}
+			for region := range w.connectors[c] {
+				regions[merged[region]] = true
 			}
 			if len(regions) > 1 {
 				continue
 			}
 
-			connectors = append(connectors[:i], connectors[i+1:]...)
+			if i < len(connectors) {
+				head := connectors[:i]
+				tail := connectors[i+1:]
+				connectors = append(head, tail...)
+				w.removeConnector(c)
+			}
 		}
 	}
+}
+
+func (w *World) removeConnector(t *Tile) {
+	delete(w.connectors, t)
 }
 
 func (w *World) addJunction(tile *Tile) {
