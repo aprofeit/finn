@@ -21,6 +21,7 @@ type Player struct {
 	lastDirection string  `json:"-"`
 	Dead          bool    `json:"dead"`
 	world         *World  `json:"-"`
+	Score         int     `json:"score"`
 }
 
 type FloatCoordinate struct {
@@ -47,6 +48,7 @@ func NewPlayer(id string, x, y float64) *Player {
 }
 
 func (p *Player) Die(w *World) {
+	p.Score = 0
 	p.Dead = true
 }
 

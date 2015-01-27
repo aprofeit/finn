@@ -38,6 +38,18 @@ Player = Backbone.Model.extend
 Players = Backbone.Collection.extend
   model: Player
 
+ScoreView = Backbone.View.extend
+  tagName: "div"
+
+  className: "score"
+
+  initialize: ->
+    @listenTo(@model, "change", @render)
+
+  render: ->
+    @$el.html(@model.get("score"))
+    @$el
+
 class World
   sort: ->
     @stage.children.sort (a, b) ->
@@ -174,5 +186,8 @@ class World
 world = new World()
 world.connect()
 world.render()
+
+scoreView = new ScoreView(model: world.currentPlayer).render()
+$("body").append(scoreView)
 
 KeyboardEvents.bind(world.websocket)

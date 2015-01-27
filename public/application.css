@@ -3,3 +3,11 @@ body {
   padding: 0;
   background-color: #000000;
 }
+
+.score {
+  font-family: 'Geneva';
+  color: white;
+  position: absolute;
+  left: 1010px;
+  top: 10px;
+}
