@@ -158,7 +158,7 @@ class World
     @members.on "remove", (player) =>
       @stage.removeChild(player.sprite)
 
-    @members.on "change", (player) =>
+    @members.on "change", (player, options) =>
       if player.get("dead")
         @stage.removeChild(player.sprite)
       else

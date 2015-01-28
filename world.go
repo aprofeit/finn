@@ -132,12 +132,16 @@ func NewWorld() *World {
 	}
 }
 
+func (w *World) AddPlayer(player *Player) {
+	w.Players = append(w.Players, player)
+}
+
 func (w *World) AddClient(client *Client) *playerUpdater {
 	w.Lock()
 	defer w.Unlock()
 	player := client.Player()
 	w.clients = append(w.clients, client)
-	w.Players = append(w.Players, player)
+	w.AddPlayer(player)
 	updater := &playerUpdater{c: make(chan *World), id: player.ClientID}
 	w.playerUpdaters = append(w.playerUpdaters, updater)
 	return updater
@@ -154,6 +158,7 @@ func (w *World) RemovePlayer(player *Player) error {
 }
 
 func (w *World) RemoveClient(client *Client) {
+	w.RemovePlayer(client.player)
 	for i, c := range w.clients {
 		if client == c {
 			w.clients = append(w.clients[:i], w.clients[i+1:]...)

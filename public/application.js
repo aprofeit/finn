@@ -193,7 +193,7 @@ World = (function() {
     this.members.on("remove", function(player) {
       return _this.stage.removeChild(player.sprite);
     });
-    this.members.on("change", function(player) {
+    this.members.on("change", function(player, options) {
       var sprite;
       if (player.get("dead")) {
         return _this.stage.removeChild(player.sprite);

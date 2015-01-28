@@ -73,6 +73,14 @@ func (p *Player) Die(w *World) {
 	p.client.Score = 0
 	p.world.RemovePlayer(p)
 	p.Dead = true
+
+	go func() {
+		time.Sleep(3 * time.Second)
+		p.Dead = false
+		tile := p.world.getSpawn()
+		p.PositionX, p.PositionX = float64(tile.X), float64(tile.Y)
+		p.world.AddPlayer(p)
+	}()
 }
 
 func (p *Player) Facing() string {
