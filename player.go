@@ -31,7 +31,7 @@ type FloatCoordinate struct {
 const WALK_RATE float64 = 0.15
 const BULLET_SPEED float64 = 0.25
 
-func NewPlayer(id string, x, y float64) *Player {
+func NewPlayer(id string, x, y float64, world *World) *Player {
 	return &Player{
 		Z:             1,
 		ClientID:      id,
@@ -44,10 +44,12 @@ func NewPlayer(id string, x, y float64) *Player {
 		Width:         0.4,
 		Height:        0.3,
 		lastDirection: "down",
+		world:         world,
 	}
 }
 
 func (p *Player) Die(w *World) {
+	p.world.RemovePlayer(p.ClientID)
 	p.Score = 0
 	p.Dead = true
 }

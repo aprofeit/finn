@@ -27,31 +27,25 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	playerID := conn.RemoteAddr().String()
 	openTile := h.World.getSpawn()
-	player := NewPlayer(playerID, float64(openTile.X), float64(openTile.Y))
-	updater := h.World.AddPlayer(player)
+	player := NewPlayer(playerID, float64(openTile.X), float64(openTile.Y), h.World)
+	client := NewClient(player)
+	updater := h.World.AddClient(client)
+	updateStopper := make(chan struct{})
 
 	go func() {
 		for {
-			world := <-updater.c
-
-			var current *Player
-			world.Lock()
-			for _, player := range world.Players {
-				if player.ClientID == playerID {
-					current = player
+			select {
+			case world := <-updater.c:
+				blob, err := world.MarshalMembers(player)
+				if err != nil {
+					log.Errorf("Marshaling world update %v", world)
 				}
-			}
-			world.Unlock()
-			if current == nil {
-				return
-			}
-			blob, err := world.MarshalMembers(current)
-			if err != nil {
-				log.Errorf("Marshaling world update %v", world)
-			}
 
-			if err = conn.WriteMessage(websocket.TextMessage, blob); err != nil {
-				log.Errorf("Writing update to client: %v", err)
+				if err = conn.WriteMessage(websocket.TextMessage, blob); err != nil {
+					log.Errorf("Writing update to client: %v", err)
+					return
+				}
+			case <-updateStopper:
 				return
 			}
 		}
@@ -61,6 +55,7 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_, p, err := conn.ReadMessage()
 		if err != nil {
 			log.Infof("Client disconnected %v", conn.RemoteAddr().String())
+			close(updateStopper)
 			h.World.RemovePlayer(playerID)
 			return
 		}

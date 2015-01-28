@@ -128,10 +128,10 @@ func NewWorld() *World {
 	}
 }
 
-func (w *World) AddPlayer(player *Player) *playerUpdater {
+func (w *World) AddClient(client *Client) *playerUpdater {
 	w.Lock()
 	defer w.Unlock()
-	player.world = w
+	player := client.Player()
 	w.Players = append(w.Players, player)
 	updater := &playerUpdater{c: make(chan *World), id: player.ClientID}
 	w.playerUpdaters = append(w.playerUpdaters, updater)
