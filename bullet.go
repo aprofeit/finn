@@ -28,7 +28,11 @@ func (b *Bullet) Update(elapsed time.Duration, world *World) {
 			}
 			if (player.PositionX < b.PositionX && player.PositionX+player.Width > b.PositionX && player.PositionY < b.PositionY && player.PositionY+player.Height > b.PositionY) || (player.PositionX < b.PositionX+b.Width && player.PositionX+player.Width > b.PositionX+b.Width && player.PositionY < b.PositionY+b.Height && player.PositionY+player.Height > b.PositionY+b.Height) {
 				player.Die(world)
-				b.player.client.Score += 1
+				client := b.player.client
+				client.Score += 1
+				if client.Score > client.HighScore {
+					client.HighScore = client.Score
+				}
 				world.RemoveProjectile(b)
 			}
 		}

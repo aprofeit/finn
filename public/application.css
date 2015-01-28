@@ -4,10 +4,13 @@ body {
   background-color: #000000;
 }
 
-.score {
-  font-family: 'Geneva';
-  color: white;
+.score-container {
   position: absolute;
   left: 1010px;
   top: 10px;
+}
+
+.score, .high-score {
+  font-family: 'Geneva';
+  color: white;
 }

@@ -41,13 +41,17 @@ Players = Backbone.Collection.extend
 ScoreView = Backbone.View.extend
   tagName: "div"
 
-  className: "score"
+  className: "score-container"
 
   initialize: ->
+    @$el.append($("<div class='score'></div>"))
+    @$el.append($("<div class='high-score'></div>"))
     @listenTo(@model, "change", @render)
 
   render: ->
-    @$el.html(@model.get("score"))
+    console.log @$el
+    @$(".score").html("SCORE #{@model.get("score")}")
+    @$(".high-score").html("HIGH #{@model.get("high_score")}")
     @$el
 
 class World

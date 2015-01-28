@@ -62,12 +62,16 @@ Players = Backbone.Collection.extend({
 
 ScoreView = Backbone.View.extend({
   tagName: "div",
-  className: "score",
+  className: "score-container",
   initialize: function() {
+    this.$el.append($("<div class='score'></div>"));
+    this.$el.append($("<div class='high-score'></div>"));
     return this.listenTo(this.model, "change", this.render);
   },
   render: function() {
-    this.$el.html(this.model.get("score"));
+    console.log(this.$el);
+    this.$(".score").html("SCORE " + (this.model.get("score")));
+    this.$(".high-score").html("HIGH " + (this.model.get("high_score")));
     return this.$el;
   }
 });
