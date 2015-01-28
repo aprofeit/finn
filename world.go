@@ -31,6 +31,7 @@ type World struct {
 	projectiles    []*Bullet
 	playerUpdaters []*playerUpdater
 	connectors     map[*Tile]map[int]bool
+	clients        []*Client
 	sync.Mutex
 }
 
@@ -132,24 +133,25 @@ func (w *World) AddClient(client *Client) *playerUpdater {
 	w.Lock()
 	defer w.Unlock()
 	player := client.Player()
+	w.clients = append(w.clients, client)
 	w.Players = append(w.Players, player)
 	updater := &playerUpdater{c: make(chan *World), id: player.ClientID}
 	w.playerUpdaters = append(w.playerUpdaters, updater)
 	return updater
 }
 
-func (w *World) RemovePlayer(id string) {
-	for i, player := range w.Players {
-		if player.ClientID == id {
-			w.Players = append(w.Players[:i], w.Players[i+1:]...)
-
-			for j, updater := range w.playerUpdaters {
-				if updater.id == id {
-					w.playerUpdaters = append(w.playerUpdaters[:j], w.playerUpdaters[j+1:]...)
-				}
-			}
-			return
+func (w *World) RemoveClient(client *Client) {
+	for i, c := range w.clients {
+		if client == c {
+			w.clients = append(w.clients[:i], w.clients[i+1:]...)
 		}
+
+		for j, updater := range w.playerUpdaters {
+			if updater.id == client.ID() {
+				w.playerUpdaters = append(w.playerUpdaters[:j], w.playerUpdaters[j+1:]...)
+			}
+		}
+		return
 	}
 }
 

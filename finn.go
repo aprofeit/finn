@@ -28,7 +28,7 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	playerID := conn.RemoteAddr().String()
 	openTile := h.World.getSpawn()
 	player := NewPlayer(playerID, float64(openTile.X), float64(openTile.Y), h.World)
-	client := NewClient(player)
+	client := NewClient(player, playerID)
 	updater := h.World.AddClient(client)
 	updateStopper := make(chan struct{})
 
@@ -56,7 +56,7 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Infof("Client disconnected %v", conn.RemoteAddr().String())
 			close(updateStopper)
-			h.World.RemovePlayer(playerID)
+			h.World.RemoveClient(client)
 			return
 		}
 		event := &ClientEvent{ClientID: conn.RemoteAddr().String()}
