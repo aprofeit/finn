@@ -21,7 +21,7 @@ type Player struct {
 	lastDirection string  `json:"-"`
 	Dead          bool    `json:"dead"`
 	world         *World  `json:"-"`
-	Score         int     `json:"score"`
+	client        *Client `json:"-"`
 }
 
 type FloatCoordinate struct {
@@ -48,8 +48,30 @@ func NewPlayer(id string, x, y float64, world *World) *Player {
 	}
 }
 
+func (p *Player) AsJSON() map[string]interface{} {
+	return map[string]interface{}{
+		"z":          p.Z,
+		"id":         p.ClientID,
+		"position_x": p.PositionX,
+		"position_y": p.PositionY,
+		"anchor_x":   p.AnchorX,
+		"anchor_y":   p.AnchorY,
+		"texture":    p.Texture,
+		"direction":  p.Direction,
+		"width":      p.Width,
+		"height":     p.Height,
+		"dead":       p.Dead,
+		"score":      p.client.Score,
+		"high_score": p.client.HighScore,
+	}
+}
+
 func (p *Player) Die(w *World) {
-	p.Score = 0
+	if p.client.Score > p.client.HighScore {
+		p.client.HighScore = p.client.Score
+	}
+	p.client.Score = 0
+	p.world.RemovePlayer(p)
 	p.Dead = true
 }
 

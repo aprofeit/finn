@@ -3,13 +3,18 @@ package main
 type Client struct {
 	player     *Player
 	remoteAddr string
+	Score      int
+	HighScore  int
 }
 
 func NewClient(player *Player, remoteAddr string) *Client {
-	return &Client{
+	client := &Client{
 		player:     player,
 		remoteAddr: remoteAddr,
+		Score:      0,
 	}
+	player.client = client
+	return client
 }
 
 func (c *Client) Player() *Player {

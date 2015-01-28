@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"io"
 	"math"
 	"math/rand"
@@ -55,8 +56,10 @@ func (w *World) Update() {
 	for now := range time.Tick(time.Second / 30) {
 		last := time.Now()
 		w.Lock()
-		for _, player := range w.Players {
-			player.Update(time.Since(last))
+		for _, client := range w.clients {
+			if player := client.Player(); player != nil {
+				player.Update(time.Since(last))
+			}
 		}
 		for _, bullet := range w.projectiles {
 			bullet.Update(time.Since(last), w)
@@ -93,16 +96,16 @@ func (w *World) Tiles() []*Tile {
 }
 
 func (w *World) MarshalMembers(current *Player) ([]byte, error) {
-	otherPlayers := []*Player{}
+	otherPlayers := make([]map[string]interface{}, 0)
 	for _, player := range w.Players {
 		if player.ClientID != current.ClientID {
-			otherPlayers = append(otherPlayers, player)
+			otherPlayers = append(otherPlayers, player.AsJSON())
 		}
 	}
 	return json.Marshal(map[string]interface{}{
 		"members":     otherPlayers,
 		"projectiles": w.projectiles,
-		"current":     current,
+		"current":     current.AsJSON(),
 	})
 }
 
@@ -138,6 +141,16 @@ func (w *World) AddClient(client *Client) *playerUpdater {
 	updater := &playerUpdater{c: make(chan *World), id: player.ClientID}
 	w.playerUpdaters = append(w.playerUpdaters, updater)
 	return updater
+}
+
+func (w *World) RemovePlayer(player *Player) error {
+	for i, p := range w.Players {
+		if p == player {
+			w.Players = append(w.Players[:i], w.Players[i+1:]...)
+			return nil
+		}
+	}
+	return errors.New("no player found to remove")
 }
 
 func (w *World) RemoveClient(client *Client) {
